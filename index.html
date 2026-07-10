@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoinFlow — College Budget Buddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #020817;
+            --bg-panel: rgba(10, 17, 40, 0.95);
+            --bg-panel-soft: rgba(20, 30, 65, 0.92);
+            --border-panel: rgba(245, 158, 11, 0.25);
+            --text-primary: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-1: #fbbf24;
+            --accent-2: #f59e0b;
+            --accent-3: #10b981;
+            --accent-warn: #ef4444;
+        }
+
+        .light {
+            --bg-page: #f8fafc;
+            --bg-panel: rgba(255, 255, 255, 0.96);
+            --bg-panel-soft: rgba(241, 245, 249, 0.95);
+            --border-panel: rgba(217, 119, 6, 0.2);
+            --text-primary: #0f172a;
+            --text-muted: #64748b;
+            --accent-1: #b45309;
+            --accent-2: #d97706;
+            --accent-3: #059669;
+            --accent-warn: #dc2626;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .bg-glow-layer {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(29, 78, 216, 0.25), transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(245, 158, 11, 0.12), transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.9), rgba(2, 8, 23, 1));
+            pointer-events: none;
+        }
+        
+        .light .bg-glow-layer {
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.1), transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(245, 158, 11, 0.08), transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(248, 250, 252, 0.9), rgba(241, 245, 249, 1));
+        }
+
+        header, .tab-pane > div, .rounded-2xl, .rounded-xl {
+            background-color: var(--bg-panel) !important;
+            border-color: var(--border-panel) !important;
+            backdrop-blur: 12px;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .interactive-card:hover {
+            border-color: rgba(245, 158, 11, 0.5) !important;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .text-muted { color: var(--text-muted) !important; }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-1) !important;
+            box-shadow: 0 0 14px rgba(251, 191, 36, 0.35);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-panel); border-radius: 4px; }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        goldPrimary: '#f59e0b',
+                        goldHover: '#d97706',
+                        richBlue: '#0a1128'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+    <div class="bg-glow-layer"></div>
+
+    <header class="sticky top-0 z-40 w-full border-b backdrop-blur-md transition-colors duration-200 shadow-lg shadow-amber-500/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" id="logo-home-trigger">
+                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">CoinFlow</span>
+                    <span id="user-greeting" class="hidden sm:inline-block ml-3 text-xs font-semibold border-l border-slate-700 pl-3 text-amber-400">Hey, Campus Champ! 🚀</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle-btn" class="p-2 rounded-lg border hover:bg-amber-500/10 hover:border-amber-400/50 transition-all shadow-sm dark:border-slate-800" title="Change Mood">
+                    <svg id="theme-sun" class="h-5 w-5 text-amber-400 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M6.343 6.344l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
+                    </svg>
+                    <svg id="theme-moon" class="h-5 w-5 text-slate-700 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+
+                <!-- Dedicated Settings Button Link -->
+                <button id="settings-page-trigger" class="p-2 rounded-lg border hover:bg-amber-500/10 hover:border-amber-400/50 transition-all shadow-sm text-amber-400 dark:border-slate-800" title="Open Settings View">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+
+                <button id="quick-add-btn" class="flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-all duration-200">
+                    <span>+ Add Cash Log</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Application Engine Switcher Layout -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- WORKSPACE VIEW: PRIMARY DASHBOARD & APPLICATION LOGS -->
+        <div id="main-app-workspace" class="space-y-8 block">
+            <!-- Student Main Monthly & Wallet Stats Section -->
+            <section id="hero-metrics-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-6 rounded-2xl border shadow-sm interactive-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-muted">Pocket Money Wallet</span>
+                        <span class="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-semibold border border-amber-500/20">All-Time Balance</span>
+                    </div>
+                    <div id="metric-total-balance" class="text-3xl font-bold tracking-tight text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.2)]">$0.00</div>
+                    <p class="text-xs text-muted mt-2">Rolling capital carried forward automatically</p>
+                </div>
+
+                <div class="p-6 rounded-2xl border shadow-sm interactive-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-muted">Current Month Inflows</span>
+                        <span id="label-current-month-income" class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">This Month</span>
+                    </div>
+                    <div id="metric-monthly-income" class="text-3xl font-bold tracking-tight text-emerald-400">$0.00</div>
+                    <p class="text-xs text-muted mt-2">Pure budget income logged this calendar month</p>
+                </div>
+
+                <div class="p-6 rounded-2xl border shadow-sm interactive-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-muted">Current Month Outflows</span>
+                        <span id="label-current-month-expense" class="text-xs bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">This Month</span>
+                    </div>
+                    <div id="metric-monthly-expenses" class="text-3xl font-bold tracking-tight text-rose-400">$0.00</div>
+                    <p class="text-xs text-muted mt-2">Pure expenses logged inside this calendar month</p>
+                </div>
+            </section>
+
+            <!-- Aggregate Historical Lifecycle Tabs -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-950/40">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-muted">Aggregate Life-to-Date Credit</span>
+                    </div>
+                    <span id="aggregate-total-credit" class="font-bold text-emerald-400 text-sm">$0.00</span>
+                </div>
+                <div class="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-950/40">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-muted">Aggregate Life-to-Date Debit</span>
+                    </div>
+                    <span id="aggregate-total-debit" class="font-bold text-rose-400 text-sm">$0.00</span>
+                </div>
+            </section>
+
+            <!-- Navigation Tabs Bar -->
+            <section class="w-full space-y-6">
+                <div class="flex border-b border-slate-800 overflow-x-auto custom-scrollbar">
+                    <nav class="flex space-x-6 items-center min-w-max pb-0.5" aria-label="Tabs">
+                        <button id="tab-trigger-dashboard" class="tab-btn px-1 py-4 text-sm font-bold border-b-2 border-amber-400 text-amber-400 focus:outline-none transition-all drop-shadow-[0_0_8px_rgba(245,158,11,0.2)]">
+                            Dashboard Logs
+                        </button>
+                        <button id="tab-trigger-analytics" class="tab-btn px-1 py-4 text-sm font-medium border-b-2 border-transparent text-muted hover:text-amber-400 focus:outline-none transition-all">
+                            Spending Analytics
+                        </button>
+                        <button id="tab-trigger-lending" class="tab-btn px-1 py-4 text-sm font-medium border-b-2 border-transparent text-muted hover:text-amber-400 focus:outline-none transition-all relative flex items-center gap-2">
+                            Friend Lending Hub
+                           <div class="relative inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-wider bg-slate-950/60 rounded-xl border border-slate-800 text-emerald-400 select-none">
+                                    Lendings
+                                    <span id="badge-lendings-count" class="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center px-1 text-[10px] font-black text-white bg-rose-500 rounded-full border border-slate-900 shadow-sm">0</span>
+                                </div>
+
+<div class="relative inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-wider bg-slate-950/60 rounded-xl border border-slate-800 text-rose-400 select-none">
+                                    Borrowings
+                                    <span id="badge-borrowings-count" class="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center px-1 text-[10px] font-black text-white bg-rose-500 rounded-full border border-slate-900 shadow-sm">0</span>
+                                </div>
+                        </button>
+                    </nav>
+                </div>
+
+                <div id="tab-contents-wrapper">
+                    <!-- Dashboard View -->
+                    <div id="view-dashboard" class="tab-pane block">
+                        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+                            <div class="lg:col-span-3 space-y-4">
+                                <div class="p-6 rounded-2xl border interactive-card">
+                                    <h2 class="text-lg font-bold mb-4 text-amber-100">Campus Expense Ledger</h2>
+                                    <div class="overflow-x-auto custom-scrollbar">
+                                        <table class="w-full text-left border-collapse text-sm">
+                                            <thead>
+                                                <tr class="text-xs font-bold uppercase tracking-wider text-muted border-b border-slate-800">
+                                                    <th class="pb-3">Date</th>
+                                                    <th class="pb-3 px-2">Description</th>
+                                                    <th class="pb-3 px-2">Category</th>
+                                                    <th class="pb-3 px-2 text-right">Amount</th>
+                                                    <th class="pb-3 text-center">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="transaction-table-rows" class="divide-y divide-slate-900"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-2 space-y-4">
+                                <div class="p-6 rounded-2xl border interactive-card">
+                                    <h2 class="text-lg font-bold mb-4 text-amber-100">College Savings Goals 🎯</h2>
+                                    <div id="goals-list-container" class="space-y-4"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics View -->
+                    <div id="view-analytics" class="tab-pane hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-2 p-6 rounded-2xl border flex flex-col items-center interactive-card">
+                                <h2 class="text-lg font-bold w-full text-left mb-6 text-amber-100">Where Your Allowance Goes</h2>
+                                <div class="w-full max-w-sm relative aspect-square">
+                                    <canvas id="analyticsChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="p-6 rounded-2xl border interactive-card">
+                                <h2 class="text-lg font-bold mb-4 text-amber-100">Category Breakdown</h2>
+                                <div id="analytics-breakdown-list" class="space-y-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lending Hub View -->
+                    <div id="view-lending" class="tab-pane hidden">
+                        <div class="space-y-6">
+                            <div class="p-5 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-4 interactive-card">
+                                <div>
+                                    <h3 class="text-base font-bold text-amber-100">Peer-to-Peer IOU Tracker</h3>
+                                    <p class="text-xs text-muted">Keep track of cash lent to or borrowed from roommates and buddies.</p>
+                                </div>
+                                <button id="lending-modal-trigger-btn" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition-all shadow-md hover:shadow-amber-500/20">
+                                    + Log Friend IOU Agreement
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="p-6 rounded-2xl border interactive-card">
+                                    <h3 class="text-md font-bold text-emerald-400 mb-3 flex items-center gap-2">💸 Cash Lent to Friends</h3>
+                                    <div id="lent-list-container" class="space-y-3"></div>
+                                </div>
+                                <div class="p-6 rounded-2xl border interactive-card">
+                                    <h3 class="text-md font-bold text-rose-400 mb-3 flex items-center gap-2">🤝 Money Borrowed From Friends</h3>
+                                    <div id="borrowed-list-container" class="space-y-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- NEWLY CONSTRUCTED DEDICATED SETTINGS PAGE VIEW CONTAINER -->
+        <div id="settings-page-workspace" class="space-y-6 hidden">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center space-x-3">
+                    <button id="settings-back-to-home" class="p-2 rounded-lg border border-slate-800 hover:bg-amber-500/10 text-amber-400 transition-colors" title="Back to Dashboard">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-100 tracking-tight">System Control Matrix</h1>
+                        <p class="text-xs text-muted">Manage local storage configurations, sandbox data pipelines, and security controls.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Grid Core -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Action Configuration Module: Sign Out -->
+                <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/50 flex flex-col justify-between interactive-card">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mb-4 text-xl">
+                            🚪
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-200 mb-1">Sign Out Session</h3>
+                        <p class="text-xs text-muted leading-relaxed">Disconnects your local profile simulation instance safely, flushing down transient state memory layers inside your active running runtime.</p>
+                    </div>
+                    <div class="pt-6">
+                        <button id="page-btn-signout" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">
+                            Sign Out safely
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Configuration Module: Reset Data -->
+                <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/50 flex flex-col justify-between interactive-card">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mb-4 text-xl">
+                            🔄
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-200 mb-1">Reset Ledger Cache</h3>
+                        <p class="text-xs text-muted leading-relaxed">Wipes out transaction parameters, expense tables, categories, and dynamic friend debts logs while preserving your system infrastructure configuration layers intact.</p>
+                    </div>
+                    <div class="pt-6">
+                        <button id="page-btn-reset-data" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 transition-all">
+                            Reset Workspace Records
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Configuration Module: Delete Profile -->
+                <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/50 flex flex-col justify-between interactive-card">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mb-4 text-xl">
+                            ⚠️
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-200 mb-1">Terminate Workspace Account</h3>
+                        <p class="text-xs text-muted leading-relaxed">Destructive step that executes an unrecoverable hard purge across your browser's complete storage sandbox environment directory layout framework structures.</p>
+                    </div>
+                    <div class="pt-6">
+                        <button id="page-btn-delete-account" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 transition-all">
+                            Permanently Delete Profile
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Settlement Modal -->
+    <div id="settle-interactive-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="w-full max-w-sm rounded-2xl border p-6 bg-slate-900 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+            <h3 class="text-lg font-bold text-amber-400 mb-2">Process IOU Return Payment</h3>
+            <p id="settle-modal-subtitle" class="text-xs text-muted mb-2"></p>
+            <div id="settle-error-alert" class="hidden text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20 p-2 rounded-xl mb-3 font-semibold"></div>
+            <form id="settle-interactive-form" class="space-y-4">
+                <input type="hidden" id="settle-debt-id">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Return Date</label>
+                    <input type="date" id="settle-date" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Amount Returned ($)</label>
+                    <input type="number" id="settle-amount" min="0.01" step="0.01" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm font-semibold text-slate-100">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" id="close-settle-modal" class="px-4 py-2 text-sm font-medium text-muted hover:text-slate-200">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold shadow-md">Apply Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Add Transaction Modal -->
+    <div id="transaction-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="w-full max-w-md rounded-2xl border p-6 bg-slate-900 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                <div class="flex space-x-4">
+                    <button type="button" id="modal-tab-add" class="text-lg font-bold text-amber-400 border-b-2 border-amber-400 pb-1">Add Record</button>
+                    <button type="button" id="modal-tab-config" class="text-lg font-medium text-muted pb-1 hover:text-amber-300">Custom Categories</button>
+                </div>
+                <button type="button" class="modal-close-btn text-muted hover:text-white" data-modal="transaction-modal">✕</button>
+            </div>
+            <div id="modal-view-add" class="block space-y-4">
+                <form id="transaction-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-2">Type</label>
+                        <div class="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-950 border border-slate-800">
+                            <button type="button" id="type-btn-expense" class="py-2 text-sm font-bold rounded-lg text-rose-400 bg-rose-500/10 border border-rose-500/20" data-type="expense">Expense</button>
+                            <button type="button" id="type-btn-income" class="py-2 text-sm font-bold rounded-lg text-slate-400" data-type="income">Income</button>
+                        </div>
+                        <input type="hidden" id="tx-type" value="expense">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Date</label>
+                        <input type="date" id="tx-date" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Amount ($)</label>
+                        <input type="number" id="tx-amount" min="0.01" step="0.01" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm font-semibold text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Category</label>
+                        <select id="tx-category" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Description</label>
+                        <input type="text" placeholder="e.g., Pizza Night Party" id="tx-description" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-2">
+                        <button type="button" class="modal-close-btn px-4 py-2 text-sm font-medium text-muted hover:text-slate-200" data-modal="transaction-modal">Cancel</button>
+                        <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold">Commit</button>
+                    </div>
+                </form>
+            </div>
+            <div id="modal-view-config" class="hidden space-y-4">
+                <form id="category-config-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Destination Target Scope</label>
+                        <select id="cfg-target-type" class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                            <option value="expense">Expense Categories Bucket</option>
+                            <option value="income">Income Categories Bucket</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">New Category Label</label>
+                        <input type="text" id="cfg-new-label" placeholder="e.g., Lab Grants, Coffee Cravings" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                    </div>
+                    <button type="submit" class="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm">Create Segment Category</button>
+                </form>
+                <div class="border-t border-slate-800 pt-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-muted mb-2">Existing Workspace Labels</h4>
+                    <div id="cfg-existing-list" class="max-h-32 overflow-y-auto space-y-1.5 custom-scrollbar text-xs"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IOU Modal -->
+    <div id="lending-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="w-full max-w-md rounded-2xl border p-6 bg-slate-900 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                <h3 class="text-lg font-bold text-amber-400">Log Friend IOU</h3>
+                <button type="button" class="modal-close-btn text-muted hover:text-white" data-modal="lending-modal">✕</button>
+            </div>
+            <form id="lending-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-2">IOU Direction</label>
+                    <select id="lending-type" class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                        <option value="lent">Lent Money To Someone</option>
+                        <option value="borrowed">Borrowed Money From Someone</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Friend Name</label>
+                    <input type="text" id="lending-person" placeholder="e.g., John Doe" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Initial Amount ($)</label>
+                    <input type="number" id="lending-amount" min="0.01" step="0.01" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm font-semibold text-slate-100">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Log Date</label>
+                    <input type="date" id="lending-date" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" class="modal-close-btn px-4 py-2 text-sm font-medium text-muted hover:text-slate-200" data-modal="lending-modal">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold">Log Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="w-full border-t border-slate-900 py-6 text-center text-xs text-muted mt-auto">
+        <p>&copy; 2026 CoinFlow Premium Core. Developed for Students.</p>
+    </footer>
+
+    <script>
+        (function() {
+            let state = {
+                transactions: [],
+                debts: [], 
+                theme: 'dark',
+                categories: {
+                    expense: ["Food & Canteen", "Dorm & Rent", "Books & Studies", "Entertainment & Fun"],
+                    income: ["Part-time Income", "Allowance", "Scholarships & Grants"]
+                }
+            };
+
+            let chartInstance = null;
+
+            function loadState() {
+                const data = localStorage.getItem('coinflow_student_state');
+                if(data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        state = { ...state, ...parsed };
+                        if (!state.debts) state.debts = [];
+                        if (!state.theme) state.theme = 'dark';
+                        if (!state.categories || !state.categories.expense) {
+                            state.categories = {
+                                expense: ["Food & Canteen", "Dorm & Rent", "Books & Studies", "Entertainment & Fun"],
+                                income: ["Part-time Income", "Allowance", "Scholarships & Grants"]
+                            };
+                        }
+                    } catch(e) { console.error(e); }
+                }
+            }
+
+            function saveState() {
+                localStorage.setItem('coinflow_student_state', JSON.stringify(state));
+                renderApp();
+            }
+
+            function initTheme() {
+                const sunBtn = document.getElementById('theme-sun');
+                const moonBtn = document.getElementById('theme-moon');
+                if (state.theme === 'dark') {
+                    document.documentElement.className = 'dark';
+                    sunBtn.classList.remove('hidden');
+                    moonBtn.classList.add('hidden');
+                } else {
+                    document.documentElement.className = 'light';
+                    moonBtn.classList.remove('hidden');
+                    sunBtn.classList.add('hidden');
+                }
+            }
+
+            function refreshSelectCategories() {
+                const selectElement = document.getElementById('tx-category');
+                const type = document.getElementById('tx-type').value;
+                selectElement.innerHTML = '';
+                
+                const list = state.categories[type] || [];
+                list.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.innerText = cat;
+                    selectElement.appendChild(opt);
+                });
+            }
+
+            function renderConfigCategoriesList() {
+                const listContainer = document.getElementById('cfg-existing-list');
+                listContainer.innerHTML = '';
+                
+                ['expense', 'income'].forEach(type => {
+                    (state.categories[type] || []).forEach(cat => {
+                        const row = document.createElement('div');
+                        row.className = "flex justify-between items-center bg-slate-950 p-1.5 rounded-lg border border-slate-800";
+                        row.innerHTML = `
+                            <span class="text-slate-300 font-medium">${cat}</span>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[10px] uppercase font-bold tracking-wider ${type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">${type}</span>
+                                <button type="button" class="text-rose-400 hover:text-rose-300 font-bold px-1 text-sm delete-category-label-btn" data-type="${type}" data-label="${cat}">✕</button>
+                            </div>
+                        `;
+                        listContainer.appendChild(row);
+                    });
+                });
+            }
+
+            function renderApp() {
+                const today = new Date();
+                const currentYear = today.getFullYear();
+                const currentMonth = today.getMonth();
+
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                if(document.getElementById('label-current-month-income')){
+                    document.getElementById('label-current-month-income').innerText = `${monthNames[currentMonth]} Credits`;
+                }
+                if(document.getElementById('label-current-month-expense')){
+                    document.getElementById('label-current-month-expense').innerText = `${monthNames[currentMonth]} Debits`;
+                }
+
+                let aggregateCredit = 0;
+                let aggregateDebit = 0;
+                let currentMonthIncome = 0;
+                let currentMonthExpense = 0;
+
+                state.transactions.forEach(t => {
+                    const amt = parseFloat(t.amount);
+                    const isIOURelated = t.isIOU === true;
+
+                    if (t.type === 'income') {
+                        aggregateCredit += amt;
+                    } else {
+                        aggregateDebit += amt;
+                    }
+
+                    if (t.date) {
+                        const tDate = new Date(t.date);
+                        if (!isNaN(tDate.getTime())) {
+                            if (tDate.getFullYear() === currentYear && tDate.getMonth() === currentMonth) {
+                                if (!isIOURelated) {
+                                    if (t.type === 'income') {
+                                        currentMonthIncome += amt;
+                                    } else {
+                                        currentMonthExpense += amt;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                const netBalance = aggregateCredit - aggregateDebit;
+
+                if(document.getElementById('metric-total-balance')) document.getElementById('metric-total-balance').innerText = `$${netBalance.toFixed(2)}`;
+                if(document.getElementById('metric-monthly-income')) document.getElementById('metric-monthly-income').innerText = `$${currentMonthIncome.toFixed(2)}`;
+                if(document.getElementById('metric-monthly-expenses')) document.getElementById('metric-monthly-expenses').innerText = `$${currentMonthExpense.toFixed(2)}`;
+                if(document.getElementById('aggregate-total-credit')) document.getElementById('aggregate-total-credit').innerText = `$${aggregateCredit.toFixed(2)}`;
+                if(document.getElementById('aggregate-total-debit')) document.getElementById('aggregate-total-debit').innerText = `$${aggregateDebit.toFixed(2)}`;
+
+                const activeLendingsCount = state.debts.filter(d => d.type === 'lent' && !d.settled).length;
+                const activeBorrowingsCount = state.debts.filter(d => d.type === 'borrowed' && !d.settled).length;
+                
+                if(document.getElementById('badge-lendings-count')) document.getElementById('badge-lendings-count').innerText = activeLendingsCount;
+                if(document.getElementById('badge-borrowings-count')) document.getElementById('badge-borrowings-count').innerText = activeBorrowingsCount;
+
+                const tableBody = document.getElementById('transaction-table-rows');
+                if(tableBody) {
+                    tableBody.innerHTML = '';
+                    if(state.transactions.length === 0) {
+                        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-xs text-muted">No transactions recorded yet. Click '+ Add Cash Log' to start!</td></tr>`;
+                    } else {
+                        [...state.transactions].reverse().forEach(t => {
+                            const tr = document.createElement('tr');
+                            tr.className = "hover:bg-slate-900/60 transition-colors border-b border-slate-900/40";
+                            tr.innerHTML = `
+                                <td class="py-3 text-xs font-medium text-slate-400">${t.date}</td>
+                                <td class="py-3 px-2 font-semibold text-slate-200">${t.description}</td>
+                                <td class="py-3 px-2"><span class="px-2 py-0.5 rounded-full text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20">${t.category || 'General'}</span></td>
+                                <td class="py-3 px-2 text-right font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">
+                                    ${t.type === 'income' ? '+' : '-'}$${parseFloat(t.amount).toFixed(2)}
+                                </td>
+                                <td class="py-3 text-center">
+                                    <button class="text-rose-400 text-xs hover:underline delete-tx-btn" data-id="${t.id}">Delete</button>
+                                </td>
+                            `;
+                            tableBody.appendChild(tr);
+                        });
+                    }
+                }
+
+                const lentContainer = document.getElementById('lent-list-container');
+                const borrowedContainer = document.getElementById('borrowed-list-container');
+
+                if(lentContainer) {
+                    lentContainer.innerHTML = '';
+                    const lentDebts = state.debts.filter(d => d.type === 'lent');
+                    if(lentDebts.length === 0) {
+                        lentContainer.innerHTML = `<p class="text-xs text-muted text-center py-4">Nobody owes you any cash right now! 🎉</p>`;
+                    } else {
+                        lentDebts.forEach(d => {
+                            const item = document.createElement('div');
+                            item.className = `p-4 rounded-xl border flex flex-col justify-between gap-2 transition-all duration-200 ${d.settled ? 'opacity-40 border-slate-800 bg-slate-900/10' : 'border-amber-500/20 bg-amber-500/5 hover:border-amber-400/50 shadow-sm'}`;
+                            item.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-bold text-sm text-slate-200">${d.person}</p>
+                                        <p class="text-xs text-muted">Started: ${d.date}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-muted font-medium">Original: $${parseFloat(d.amount).toFixed(2)}</p>
+                                        <p class="text-sm font-bold text-amber-400">Owes: $${parseFloat(d.remaining ?? d.amount).toFixed(2)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center mt-1 border-t border-slate-800/60 pt-2">
+                                    <span class="text-[10px] uppercase font-bold tracking-wide ${d.settled ? 'text-slate-400' : 'text-amber-400'}">
+                                        ${d.settled ? '✅ Fully Paid' : '⏳ Active Loan'}
+                                    </span>
+                                    ${!d.settled ? `<button class="px-3 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold trigger-settle-action-btn shadow-sm" data-id="${d.id}">Collect Pay</button>` : ''}
+                                </div>
+                            `;
+                            lentContainer.appendChild(item);
+                        });
+                    }
+                }
+
+                if(borrowedContainer) {
+                    borrowedContainer.innerHTML = '';
+                    const borrowedDebts = state.debts.filter(d => d.type === 'borrowed');
+                    if(borrowedDebts.length === 0) {
+                        borrowedContainer.innerHTML = `<p class="text-xs text-muted text-center py-4">Awesome! You don't owe any money to friends. 🙌</p>`;
+                    } else {
+                        borrowedDebts.forEach(d => {
+                            const item = document.createElement('div');
+                            item.className = `p-4 rounded-xl border flex flex-col justify-between gap-2 transition-all duration-200 ${d.settled ? 'opacity-40 border-slate-800 bg-slate-900/10' : 'border-rose-500/20 bg-rose-500/5 hover:border-rose-400/50 shadow-sm'}`;
+                            item.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-bold text-sm text-slate-200">${d.person}</p>
+                                        <p class="text-xs text-muted">Borrowed: ${d.date}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-muted font-medium">Original: $${parseFloat(d.amount).toFixed(2)}</p>
+                                        <p class="text-sm font-bold text-rose-400">You Owe: $${parseFloat(d.remaining ?? d.amount).toFixed(2)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center mt-1 border-t border-slate-800/60 pt-2">
+                                    <span class="text-[10px] uppercase font-bold tracking-wide ${d.settled ? 'text-slate-400' : 'text-amber-400'}">
+                                        ${d.settled ? '✅ Settled Up' : '🚨 Outstanding Debt'}
+                                    </span>
+                                    ${!d.settled ? `<button class="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold trigger-settle-action-btn shadow-sm" data-id="${d.id}">Pay Back</button>` : ''}
+                                </div>
+                            `;
+                            borrowedContainer.appendChild(item);
+                        });
+                    }
+                }
+
+                const goalsContainer = document.getElementById('goals-list-container');
+                if(goalsContainer) {
+                    goalsContainer.innerHTML = `
+                        <div class="p-4 rounded-xl border border-dashed border-slate-800 text-center text-xs text-muted">
+                            Milestones and analytics are adjusted automatically based on Wallet Balance.
+                        </div>
+                    `;
+                }
+
+                updateChart();
+            }
+
+            function updateChart() {
+                const categorySums = {};
+                state.transactions.forEach(t => {
+                    if(t.type === 'expense') {
+                        const cat = t.category || "General";
+                        categorySums[cat] = (categorySums[cat] || 0) + parseFloat(t.amount);
+                    }
+                });
+
+                const labels = Object.keys(categorySums);
+                const dataValues = Object.values(categorySums);
+
+                const listContainer = document.getElementById('analytics-breakdown-list');
+                if(listContainer) {
+                    listContainer.innerHTML = '';
+                    labels.forEach((l, idx) => {
+                        const row = document.createElement('div');
+                        row.className = "flex justify-between text-sm items-center font-medium border-b border-slate-900 py-1";
+                        row.innerHTML = `<span>${l}</span><span class="font-bold text-amber-400">$${dataValues[idx].toFixed(2)}</span>`;
+                        listContainer.appendChild(row);
+                    });
+                }
+
+                if(chartInstance) { chartInstance.destroy(); }
+
+                const ctx = document.getElementById('analyticsChart');
+                if(!ctx) return;
+
+                if(labels.length === 0) {
+                    ctx.style.display = 'none';
+                    return;
+                } else {
+                    ctx.style.display = 'block';
+                }
+
+                chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: dataValues,
+                            backgroundColor: ['#f59e0b', '#fbbf24', '#b45309', '#3b82f6', '#1d4ed8', '#6366f1'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+
+            function setupTabs() {
+                const triggers = {
+                    'tab-trigger-dashboard': 'view-dashboard',
+                    'tab-trigger-analytics': 'view-analytics',
+                    'tab-trigger-lending': 'view-lending'
+                };
+
+                Object.keys(triggers).forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        el.addEventListener('click', function() {
+                            Object.keys(triggers).forEach(tId => {
+                                document.getElementById(tId).className = "tab-btn px-1 py-4 text-sm font-medium border-b-2 border-transparent text-muted hover:text-amber-400 focus:outline-none transition-all relative flex items-center gap-2";
+                                document.getElementById(triggers[tId]).classList.add('hidden');
+                                document.getElementById(triggers[tId]).classList.remove('block');
+                            });
+                            this.className = "tab-btn px-1 py-4 text-sm font-bold border-b-2 border-amber-400 text-amber-400 focus:outline-none transition-all drop-shadow-[0_0_8px_rgba(245,158,11,0.2)] relative flex items-center gap-2";
+                            document.getElementById(triggers[id]).classList.remove('hidden');
+                            document.getElementById(triggers[id]).classList.add('block');
+                        });
+                    }
+                });
+            }
+
+            function setupModalHandlers() {
+                // Workspace switching layout engine configuration routing logic
+                const homeWorkspace = document.getElementById('main-app-workspace');
+                const settingsWorkspace = document.getElementById('settings-page-workspace');
+
+                const switchToHomeView = () => {
+                    settingsWorkspace.classList.add('hidden');
+                    homeWorkspace.classList.remove('hidden');
+                    renderApp();
+                };
+
+                const switchToSettingsView = () => {
+                    homeWorkspace.classList.add('hidden');
+                    settingsWorkspace.classList.remove('hidden');
+                };
+
+                document.getElementById('settings-page-trigger').addEventListener('click', switchToSettingsView);
+                document.getElementById('settings-back-to-home').addEventListener('click', switchToHomeView);
+                document.getElementById('logo-home-trigger').addEventListener('click', switchToHomeView);
+
+                // Settings views button functional parameters logic
+                const executeSignoutAction = () => {
+                    if(confirm("Are you sure you want to sign out from this device session?")) {
+                        alert("Successfully signed out. Returning to baseline initialization setup configuration.");
+                        window.location.reload();
+                    }
+                };
+
+                const executeResetAction = () => {
+                    if(confirm("Are you sure you want to wipe clean all logged transaction rows, dynamic targets, and IOUs back to clean baseline parameters?")) {
+                        state.transactions = [];
+                        state.debts = [];
+                        saveState();
+                        alert("Ledger data arrays cleared down securely.");
+                        switchToHomeView();
+                    }
+                };
+
+                const executeDeleteAction = () => {
+                    if(confirm("🚨 CRITICAL WARNING: This action will permanently drop your account profile database fields along with all localStorage parameters footprints! This is unrecoverable. Continue?")) {
+                        localStorage.removeItem('coinflow_student_state');
+                        alert("Account profile dropped cleanly from system cache. Reloading application canvas.");
+                        window.location.reload();
+                    }
+                };
+
+                document.getElementById('page-btn-signout').addEventListener('click', executeSignoutAction);
+                document.getElementById('page-btn-reset-data').addEventListener('click', executeResetAction);
+                document.getElementById('page-btn-delete-account').addEventListener('click', executeDeleteAction);
+
+
+                // Legacy operational framework mechanisms
+                document.getElementById('modal-tab-add').addEventListener('click', function() {
+                    this.className = "text-lg font-bold text-amber-400 border-b-2 border-amber-400 pb-1";
+                    document.getElementById('modal-tab-config').className = "text-lg font-medium text-muted pb-1 hover:text-amber-300";
+                    document.getElementById('modal-view-add').classList.replace('hidden', 'block');
+                    document.getElementById('modal-view-config').classList.replace('block', 'hidden');
+                });
+
+                document.getElementById('modal-tab-config').addEventListener('click', function() {
+                    this.className = "text-lg font-bold text-amber-400 border-b-2 border-amber-400 pb-1";
+                    document.getElementById('modal-tab-add').className = "text-lg font-medium text-muted pb-1 hover:text-amber-300";
+                    document.getElementById('modal-view-config').classList.replace('hidden', 'block');
+                    document.getElementById('modal-view-add').classList.replace('block', 'hidden');
+                    renderConfigCategoriesList();
+                });
+
+                document.getElementById('quick-add-btn').addEventListener('click', () => {
+                    document.getElementById('tx-date').valueAsDate = new Date();
+                    refreshSelectCategories();
+                    document.getElementById('transaction-modal').classList.remove('hidden');
+                });
+                document.getElementById('lending-modal-trigger-btn').addEventListener('click', () => {
+                    document.getElementById('lending-date').valueAsDate = new Date();
+                    document.getElementById('lending-modal').classList.remove('hidden');
+                });
+
+                document.querySelectorAll('.modal-close-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.getElementById(this.getAttribute('data-modal')).classList.add('hidden');
+                    });
+                });
+
+                document.getElementById('category-config-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const typeScope = document.getElementById('cfg-target-type').value;
+                    const labelInput = document.getElementById('cfg-new-label').value.trim();
+                    
+                    if(labelInput && !state.categories[typeScope].includes(labelInput)) {
+                        state.categories[typeScope].push(labelInput);
+                        this.reset();
+                        renderConfigCategoriesList();
+                        refreshSelectCategories();
+                        saveState();
+                    }
+                });
+
+                document.getElementById('cfg-existing-list').addEventListener('click', function(e) {
+                    if (e.target.classList.contains('delete-category-label-btn')) {
+                        const targetType = e.target.getAttribute('data-type');
+                        const targetLabel = e.target.getAttribute('data-label');
+                        
+                        state.categories[targetType] = state.categories[targetType].filter(cat => cat !== targetLabel);
+                        renderConfigCategoriesList();
+                        refreshSelectCategories();
+                        saveState();
+                    }
+                });
+
+                document.getElementById('transaction-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const newTx = {
+                        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                        type: document.getElementById('tx-type').value,
+                        date: document.getElementById('tx-date').value,
+                        amount: parseFloat(document.getElementById('tx-amount').value),
+                        category: document.getElementById('tx-category').value,
+                        description: document.getElementById('tx-description').value,
+                        isIOU: false
+                    };
+                    state.transactions.push(newTx);
+                    document.getElementById('transaction-modal').classList.add('hidden');
+                    this.reset();
+                    saveState();
+                });
+
+                document.getElementById('lending-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const initialAmt = parseFloat(document.getElementById('lending-amount').value);
+                    const isLent = document.getElementById('lending-type').value === 'lent';
+                    const newDebt = {
+                        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                        type: document.getElementById('lending-type').value,
+                        person: document.getElementById('lending-person').value,
+                        amount: initialAmt,
+                        remaining: initialAmt,
+                        date: document.getElementById('lending-date').value,
+                        settled: false
+                    };
+                    state.debts.push(newDebt);
+
+                    state.transactions.push({
+                        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                        type: isLent ? 'expense' : 'income',
+                        date: newDebt.date,
+                        amount: initialAmt,
+                        category: isLent ? 'Lened' : 'Borrowed',
+                        isIOU: true,
+                        description: isLent ? `Lent cash out to ${newDebt.person} 💸` : `Borrowed cash from ${newDebt.person} 🤝`
+                    });
+
+                    document.getElementById('lending-modal').classList.add('hidden');
+                    this.reset();
+                    saveState();
+                });
+
+                if(document.getElementById('transaction-table-rows')){
+                    document.getElementById('transaction-table-rows').addEventListener('click', function(e) {
+                        if(e.target.classList.contains('delete-tx-btn')) {
+                            const targetId = e.target.getAttribute('data-id');
+                            state.transactions = state.transactions.filter(t => t.id !== targetId);
+                            saveState();
+                        }
+                    });
+                }
+
+                document.getElementById('type-btn-expense').addEventListener('click', function() {
+                    this.className = "py-2 text-sm font-bold rounded-lg text-rose-400 bg-rose-500/10 border border-rose-500/20";
+                    document.getElementById('type-btn-income').className = "py-2 text-sm font-bold rounded-lg text-slate-400";
+                    document.getElementById('tx-type').value = "expense";
+                    refreshSelectCategories();
+                });
+                document.getElementById('type-btn-income').addEventListener('click', function() {
+                    this.className = "py-2 text-sm font-bold rounded-lg text-emerald-400 bg-emerald-500/10 border border-emerald-500/20";
+                    document.getElementById('type-btn-expense').className = "py-2 text-sm font-bold rounded-lg text-slate-400";
+                    document.getElementById('tx-type').value = "income";
+                    refreshSelectCategories();
+                });
+
+                const handleOpenSettleWorkflow = (e) => {
+                    const btn = e.target.closest('.trigger-settle-action-btn');
+                    if(!btn) return;
+                    const debtId = btn.getAttribute('data-id');
+                    const debtItem = state.debts.find(d => d.id === debtId);
+                    if(!debtItem) return;
+
+                    document.getElementById('settle-debt-id').value = debtId;
+                    document.getElementById('settle-date').valueAsDate = new Date();
+                    document.getElementById('settle-amount').value = '';
+                    document.getElementById('settle-error-alert').classList.add('hidden');
+                    
+                    const rem = debtItem.remaining ?? debtItem.amount;
+                    document.getElementById('settle-modal-subtitle').innerText = `Target Friend: ${debtItem.person}. Outstanding Remainder: $${parseFloat(rem).toFixed(2)}`;
+                    document.getElementById('settle-interactive-modal').classList.remove('hidden');
+                };
+
+                if(document.getElementById('lent-list-container')) document.getElementById('lent-list-container').addEventListener('click', handleOpenSettleWorkflow);
+                if(document.getElementById('borrowed-list-container')) document.getElementById('borrowed-list-container').addEventListener('click', handleOpenSettleWorkflow);
+
+                document.getElementById('close-settle-modal').addEventListener('click', () => {
+                    document.getElementById('settle-interactive-modal').classList.add('hidden');
+                });
+
+                document.getElementById('settle-interactive-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const targetId = document.getElementById('settle-debt-id').value;
+                    const payAmt = parseFloat(document.getElementById('settle-amount').value);
+                    const payDate = document.getElementById('settle-date').value;
+                    const errorContainer = document.getElementById('settle-error-alert');
+
+                    const index = state.debts.findIndex(d => d.id === targetId);
+                    if(index !== -1) {
+                        let currentRem = state.debts[index].remaining ?? state.debts[index].amount;
+                        
+                        if (payAmt > currentRem) {
+                            errorContainer.innerText = `⛔ Action Denied: Payment ($${payAmt.toFixed(2)}) exceeds remaining obligation ($${currentRem.toFixed(2)}).`;
+                            errorContainer.classList.remove('hidden');
+                            return;
+                        }
+
+                        errorContainer.classList.add('hidden');
+                        let newRem = currentRem - payAmt;
+                        if (newRem <= 0) {
+                            newRem = 0;
+                            state.debts[index].settled = true;
+                        }
+                        state.debts[index].remaining = newRem;
+
+                        const isLentDirection = state.debts[index].type === 'lent';
+
+                        state.transactions.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                            type: isLentDirection ? 'income' : 'expense',
+                            date: payDate,
+                            amount: payAmt,
+                            category: isLentDirection ? 'Recieved' : 'Paid',
+                            isIOU: true,
+                            description: isLentDirection ? `IOU Payback from ${state.debts[index].person}` : `Repaid back debt to ${state.debts[index].person}`
+                        });
+
+                        document.getElementById('settle-interactive-modal').classList.add('hidden');
+                        saveState();
+                    }
+                });
+
+                document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+                    state.theme = (state.theme === 'dark') ? 'light' : 'dark';
+                    initTheme();
+                    localStorage.setItem('coinflow_student_state', JSON.stringify(state));
+                });
+            }
+
+            function startApp() {
+                loadState();
+                initTheme();
+                setupTabs();
+                setupModalHandlers();
+                renderApp();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener("DOMContentLoaded", startApp);
+            } else {
+                startApp();
+            }
+        })();
+    </script>
+</body>
+</html>
