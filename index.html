@@ -6,7 +6,8 @@
     <title>CoinFlow — College Budget Buddy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-page: #020817;
@@ -59,10 +60,10 @@
                 radial-gradient(circle at 50% 50%, rgba(248, 250, 252, 0.9), rgba(241, 245, 249, 1));
         }
 
-        header, .tab-pane > div, .rounded-2xl, .rounded-xl {
+        header, .tab-pane > div, .rounded-2xl, .rounded-xl, .auth-card {
             background-color: var(--bg-panel) !important;
             border-color: var(--border-panel) !important;
-            backdrop-blur: 12px;
+            backdrop-filter: blur(12px);
             transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -112,7 +113,7 @@
                 </div>
                 <div>
                     <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">CoinFlow</span>
-                    <span id="user-greeting" class="hidden sm:inline-block ml-3 text-xs font-semibold border-l border-slate-700 pl-3 text-amber-400">Hey, Campus Champ! 🚀</span>
+                    <span id="user-greeting" class="inline-block ml-3 text-sm font-semibold border-l border-slate-700 pl-3 text-amber-400">Hey Campus Champ! 🚀</span>
                 </div>
             </div>
 
@@ -145,8 +146,42 @@
     <!-- Main Workspace Application Engine Switcher Layout -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
+        <!-- SECURE AUTHENTICATION SCREEN -->
+        <div id="auth-view" class="max-w-md mx-auto my-12 p-8 rounded-2xl border shadow-xl auth-card space-y-6">
+            <div class="text-center">
+                <h2 id="auth-title" class="text-2xl font-bold tracking-tight text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.2)]">Sign In to Your Account</h2>
+                <p class="text-xs text-muted mt-2">Manage your college wallet limits and sync logs securely across all systems.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div id="profile-inputs" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Full Name</label>
+                        <input type="text" id="auth-name" placeholder="John Doe" class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Standard (Class/Grade)</label>
+                        <input type="text" id="auth-standard" placeholder="e.g. 10th Grade" class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Email Address</label>
+                    <input type="email" id="auth-email" placeholder="you@example.com" class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Password</label>
+                    <input type="password" id="auth-password" placeholder="••••••••" class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                </div>
+
+                <button id="btn-primary-auth" onclick="handleAuthSubmit()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold text-sm shadow-md hover:from-amber-400 hover:to-yellow-400 transition-all">Sign In</button>
+                
+                <p id="auth-toggle-text" class="text-xs text-center text-muted">Don't have an account? <a href="#" onclick="toggleAuthMode(true)" class="text-amber-400 hover:underline">Sign Up here</a></p>
+            </div>
+        </div>
+
         <!-- WORKSPACE VIEW: PRIMARY DASHBOARD & APPLICATION LOGS -->
-        <div id="main-app-workspace" class="space-y-8 block">
+        <div id="main-app-workspace" class="space-y-8 hidden">
             <!-- Student Main Monthly & Wallet Stats Section -->
             <section id="hero-metrics-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="p-6 rounded-2xl border shadow-sm interactive-card">
@@ -207,15 +242,14 @@
                         </button>
                         <button id="tab-trigger-lending" class="tab-btn px-1 py-4 text-sm font-medium border-b-2 border-transparent text-muted hover:text-amber-400 focus:outline-none transition-all relative flex items-center gap-2">
                             Friend Lending Hub
-                           <div class="relative inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-wider bg-slate-950/60 rounded-xl border border-slate-800 text-emerald-400 select-none">
-                                    Lendings
-                                    <span id="badge-lendings-count" class="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center px-1 text-[10px] font-black text-white bg-rose-500 rounded-full border border-slate-900 shadow-sm">0</span>
-                                </div>
-
-<div class="relative inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-wider bg-slate-950/60 rounded-xl border border-slate-800 text-rose-400 select-none">
-                                    Borrowings
-                                    <span id="badge-borrowings-count" class="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center px-1 text-[10px] font-black text-white bg-rose-500 rounded-full border border-slate-900 shadow-sm">0</span>
-                                </div>
+                            <div class="relative inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-wider bg-slate-950/60 rounded-xl border border-slate-800 text-emerald-400 select-none">
+                                Lendings
+                                <span id="badge-lendings-count" class="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center px-1 text-[10px] font-black text-white bg-rose-500 rounded-full border border-slate-900 shadow-sm">0</span>
+                            </div>
+                            <div class="relative inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-wider bg-slate-950/60 rounded-xl border border-slate-800 text-rose-400 select-none">
+                                Borrowings
+                                <span id="badge-borrowings-count" class="absolute -top-1.5 -right-1.5 min-w-5 h-5 flex items-center justify-center px-1 text-[10px] font-black text-white bg-rose-500 rounded-full border border-slate-900 shadow-sm">0</span>
+                            </div>
                         </button>
                     </nav>
                 </div>
@@ -245,6 +279,15 @@
                             </div>
 
                             <div class="lg:col-span-2 space-y-4">
+                                <div class="p-6 rounded-2xl border interactive-card bg-slate-900/50">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h2 id="welcome-text" class="text-lg font-bold text-amber-400">Hey Campus Champ</h2>
+                                        <span class="text-xs bg-slate-950 px-2 py-1 rounded border border-slate-800 text-slate-400">Standard: <span id="display-standard" class="text-slate-200 font-bold">-</span></span>
+                                    </div>
+                                    <p class="text-xs text-muted mb-4">Your workspace profile synchronization asset directory.</p>
+                                    <button onclick="saveInitialLedger()" class="w-full py-2 px-4 text-xs rounded-xl font-bold border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 transition-all">Initialize/Sync Cloud Storage Matrix</button>
+                                </div>
+
                                 <div class="p-6 rounded-2xl border interactive-card">
                                     <h2 class="text-lg font-bold mb-4 text-amber-100">College Savings Goals 🎯</h2>
                                     <div id="goals-list-container" class="space-y-4"></div>
@@ -327,7 +370,7 @@
                         <p class="text-xs text-muted leading-relaxed">Disconnects your local profile simulation instance safely, flushing down transient state memory layers inside your active running runtime.</p>
                     </div>
                     <div class="pt-6">
-                        <button id="page-btn-signout" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">
+                        <button id="page-btn-signout" onclick="signOut()" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">
                             Sign Out safely
                         </button>
                     </div>
@@ -359,7 +402,7 @@
                         <p class="text-xs text-muted leading-relaxed">Destructive step that executes an unrecoverable hard purge across your browser's complete storage sandbox environment directory layout framework structures.</p>
                     </div>
                     <div class="pt-6">
-                        <button id="page-btn-delete-account" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 transition-all">
+                        <button id="page-btn-delete-account" onclick="deleteAccountAndData()" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 transition-all">
                             Permanently Delete Profile
                         </button>
                     </div>
@@ -499,6 +542,156 @@
     </footer>
 
     <script>
+        // --- SUPABASE ENGINE LAYER ---
+        const SUPABASE_URL = "https://obefgjffakopgyawjvhy.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iZWZnamZmYWtvcGd5YXdqdmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2Nzg3ODEsImV4cCI6MjA5OTI1NDc4MX0.Uf-X4ymOMEvbzuPEWRT-Sk706O9vtgYhyDGbM9tbuns";
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let isSignUpMode = false;
+
+        function toggleAuthMode(signUp) {
+            isSignUpMode = signUp;
+            const title = document.getElementById('auth-title');
+            const profileInputs = document.getElementById('profile-inputs');
+            const primaryBtn = document.getElementById('btn-primary-auth');
+            const toggleText = document.getElementById('auth-toggle-text');
+
+            if (isSignUpMode) {
+                title.innerText = "Create Your Account";
+                profileInputs.classList.remove('hidden');
+                primaryBtn.innerText = "Sign Up";
+                toggleText.innerHTML = 'Already have an account? <a href="#" onclick="toggleAuthMode(false)" class="text-amber-400 hover:underline">Sign In here</a>';
+            } else {
+                title.innerText = "Sign In to Your Account";
+                profileInputs.classList.add('hidden');
+                primaryBtn.innerText = "Sign In";
+                toggleText.innerHTML = 'Don\'t have an account? <a href="#" onclick="toggleAuthMode(true)" class="text-amber-400 hover:underline">Sign Up here</a>';
+            }
+        }
+
+        async function handleAuthSubmit() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const name = document.getElementById('auth-name').value;
+            const standard = document.getElementById('auth-standard').value;
+
+            if (!email || !password) return alert("Please fill out email and password fields.");
+
+            if (isSignUpMode) {
+                if (!name || !standard) return alert("Please fill out your Name and Standard.");
+                
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) return alert("Sign Up Error: " + error.message);
+
+                const user = data.user;
+                if (user) {
+                    const { error: profileError } = await supabaseClient
+                        .from('profiles')
+                        .insert([{ id: user.id, name: name, standard: standard }]);
+
+                    if (profileError) {
+                        alert("Account created, but profile parameters failed: " + profileError.message);
+                    } else {
+                        alert("Sign up successful! Please check your email for verification.");
+                        toggleAuthMode(false);
+                    }
+                }
+            } else {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) return alert("Sign In Error: " + error.message);
+            }
+        }
+
+        async function loadDashboardData(user) {
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('name, standard')
+                .eq('id', user.id)
+                .single();
+
+            if (error) {
+                console.error("Error drawing profile info:", error.message);
+                document.getElementById("welcome-text").innerText = "Hey Campus Champ";
+                document.getElementById("user-greeting").innerText = "Hey, Campus Champ! 🚀";
+            } else if (profile) {
+                document.getElementById("welcome-text").innerText = `Hey ${profile.name}`;
+                document.getElementById("user-greeting").innerText = `Hey, ${profile.name}! 🚀`;
+                document.getElementById("display-standard").innerText = profile.standard;
+            }
+        }
+
+        async function saveInitialLedger() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) return alert("No secure active user session found.");
+
+            const { error } = await supabaseClient
+                .from('user_data')
+                .upsert({
+                    user_id: user.id,
+                    transactions: [],
+                    debts: [],
+                    categories: {
+                        expense: ["Food & Canteen", "Dorm & Rent", "Books & Studies", "Entertainment & Fun"],
+                        income: ["Part-time Income", "Allowance", "Scholarships & Grants"]
+                    }
+                }, { onConflict: 'user_id' });
+
+            if (error) {
+                alert("Error compiling data asset: " + error.message);
+            } else {
+                alert("Individual cloud sandbox storage synchronized successfully!");
+            }
+        }
+
+        async function deleteAccountAndData() {
+            const confirmAction = confirm("🚨 CRITICAL WARNING: Are you sure you want to completely drop your cloud records? This cannot be undone.");
+            if (!confirmAction) return;
+
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) return;
+
+            const { error } = await supabaseClient
+                .from('profiles')
+                .delete()
+                .eq('id', user.id);
+
+            if (error) {
+                alert("Could not drop records: " + error.message);
+            } else {
+                alert("Cloud storage drop verified safely. Logging out session.");
+                signOut();
+            }
+        }
+
+        async function signOut() {
+            await supabaseClient.auth.signOut();
+            document.getElementById('settings-page-workspace').classList.add('hidden');
+        }
+
+        // Global Dynamic Auth Sync Matrix
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            const authView = document.getElementById('auth-view');
+            const mainAppWorkspace = document.getElementById('main-app-workspace');
+            const settingsTrigger = document.getElementById('settings-page-trigger');
+            const quickAddTrigger = document.getElementById('quick-add-btn');
+
+            if (session) {
+                authView.classList.add('hidden');
+                mainAppWorkspace.classList.remove('hidden');
+                settingsTrigger.style.display = 'inline-flex';
+                quickAddTrigger.style.display = 'inline-flex';
+                loadDashboardData(session.user);
+            } else {
+                authView.classList.remove('hidden');
+                mainAppWorkspace.classList.add('hidden');
+                settingsTrigger.style.display = 'none';
+                quickAddTrigger.style.display = 'none';
+                document.getElementById("user-greeting").innerText = "Hey Campus Champ! 🚀";
+            }
+        });
+
+
+        // --- APPLICATION LOGIC MATRIX LAYER ---
         (function() {
             let state = {
                 transactions: [],
@@ -823,13 +1016,15 @@
             }
 
             function setupModalHandlers() {
-                // Workspace switching layout engine configuration routing logic
                 const homeWorkspace = document.getElementById('main-app-workspace');
                 const settingsWorkspace = document.getElementById('settings-page-workspace');
 
                 const switchToHomeView = () => {
                     settingsWorkspace.classList.add('hidden');
-                    homeWorkspace.classList.remove('hidden');
+                    // Only show if user is signed in
+                    if(supabaseClient.auth.getSession()) {
+                        homeWorkspace.classList.remove('hidden');
+                    }
                     renderApp();
                 };
 
@@ -842,14 +1037,6 @@
                 document.getElementById('settings-back-to-home').addEventListener('click', switchToHomeView);
                 document.getElementById('logo-home-trigger').addEventListener('click', switchToHomeView);
 
-                // Settings views button functional parameters logic
-                const executeSignoutAction = () => {
-                    if(confirm("Are you sure you want to sign out from this device session?")) {
-                        alert("Successfully signed out. Returning to baseline initialization setup configuration.");
-                        window.location.reload();
-                    }
-                };
-
                 const executeResetAction = () => {
                     if(confirm("Are you sure you want to wipe clean all logged transaction rows, dynamic targets, and IOUs back to clean baseline parameters?")) {
                         state.transactions = [];
@@ -860,20 +1047,8 @@
                     }
                 };
 
-                const executeDeleteAction = () => {
-                    if(confirm("🚨 CRITICAL WARNING: This action will permanently drop your account profile database fields along with all localStorage parameters footprints! This is unrecoverable. Continue?")) {
-                        localStorage.removeItem('coinflow_student_state');
-                        alert("Account profile dropped cleanly from system cache. Reloading application canvas.");
-                        window.location.reload();
-                    }
-                };
-
-                document.getElementById('page-btn-signout').addEventListener('click', executeSignoutAction);
                 document.getElementById('page-btn-reset-data').addEventListener('click', executeResetAction);
-                document.getElementById('page-btn-delete-account').addEventListener('click', executeDeleteAction);
 
-
-                // Legacy operational framework mechanisms
                 document.getElementById('modal-tab-add').addEventListener('click', function() {
                     this.className = "text-lg font-bold text-amber-400 border-b-2 border-amber-400 pb-1";
                     document.getElementById('modal-tab-config').className = "text-lg font-medium text-muted pb-1 hover:text-amber-300";
