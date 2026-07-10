@@ -182,14 +182,14 @@
                 <div class="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-950/40">
                     <div class="flex items-center space-x-3">
                         <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-                        <span class="text-xs font-bold uppercase tracking-wider text-muted">Aggregate Life-to-Date Credit</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-muted"> TOTAL CREDIT </span>
                     </div>
                     <span id="aggregate-total-credit" class="font-bold text-emerald-400 text-sm">$0.00</span>
                 </div>
                 <div class="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-950/40">
                     <div class="flex items-center space-x-3">
                         <div class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
-                        <span class="text-xs font-bold uppercase tracking-wider text-muted">Aggregate Life-to-Date Debit</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-muted"> TOTAL DEBIT </span>
                     </div>
                     <span id="aggregate-total-debit" class="font-bold text-rose-400 text-sm">$0.00</span>
                 </div>
@@ -968,7 +968,7 @@
                         type: isLent ? 'expense' : 'income',
                         date: newDebt.date,
                         amount: initialAmt,
-                        category: isLent ? 'Lened' : 'Borrowed',
+                        category: isLent ? 'Lent' : 'Borrowed',
                         isIOU: true,
                         description: isLent ? `Lent cash out to ${newDebt.person} 💸` : `Borrowed cash from ${newDebt.person} 🤝`
                     });
@@ -1057,7 +1057,7 @@
                             type: isLentDirection ? 'income' : 'expense',
                             date: payDate,
                             amount: payAmt,
-                            category: isLentDirection ? 'Recieved' : 'Paid',
+                            category: isLentDirection ? 'Received' : 'Paid',
                             isIOU: true,
                             description: isLentDirection ? `IOU Payback from ${state.debts[index].person}` : `Repaid back debt to ${state.debts[index].person}`
                         });
