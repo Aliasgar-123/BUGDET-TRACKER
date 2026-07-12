@@ -741,6 +741,7 @@
 
             if (isSignUpMode) {
                 if (!name || !standard) return alert("Please fill out your Name and Standard.");
+                localStorage.setItem('coinflow_pending_profile', JSON.stringify({ name, standard }));
 
                 const { data, error } = await supabaseClient.auth.signUp({
                     email,
@@ -759,6 +760,8 @@
 
                     if (profileError) {
                         alert("Account created, but profile parameters failed: " + profileError.message);
+                    } else {
+                        localStorage.removeItem('coinflow_pending_profile');
                     }
 
                     if (data.session?.user) {
@@ -767,15 +770,16 @@
                         document.getElementById('auth-view').classList.add('hidden');
                         document.getElementById('main-app-workspace').classList.remove('hidden');
                     }
-
-                    alert("Sign up successful! Please check your email for verification if your Supabase project requires it.");
-                    toggleAuthMode(false);
                 }
+
+                alert("Sign up successful! Please check your email for verification if your Supabase project requires it.");
+                toggleAuthMode(false);
             } else {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) return alert("Sign In Error: " + error.message);
                 const signedInUser = data.user ?? data.session?.user;
                 if (signedInUser) {
+                    await ensurePendingProfileSaved(signedInUser);
                     await loadDashboardData(signedInUser);
                     await loadStateFromSupabase(signedInUser);
                     document.getElementById('auth-view').classList.add('hidden');
@@ -787,6 +791,8 @@
 
         async function loadDashboardData(user) {
             if (!ensureSupabaseReady()) return;
+
+            await ensurePendingProfileSaved(user);
 
             const defaultName = user?.email?.split('@')[0] || 'Campus Champ';
             const { data: profile, error } = await supabaseClient
@@ -822,6 +828,46 @@
 
             if (error && error.message) {
                 console.warn("Profile load warning:", error.message);
+            }
+        }
+
+        async function ensurePendingProfileSaved(user) {
+            if (!ensureSupabaseReady() || !user?.id) return;
+
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('id')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            if (error) {
+                console.warn('Could not check existing profile:', error.message);
+                return;
+            }
+
+            if (profile) {
+                localStorage.removeItem('coinflow_pending_profile');
+                return;
+            }
+
+            const pendingStr = localStorage.getItem('coinflow_pending_profile');
+            if (!pendingStr) return;
+
+            try {
+                const pending = JSON.parse(pendingStr);
+                if (pending?.name && pending?.standard) {
+                    const { error: insertError } = await supabaseClient
+                        .from('profiles')
+                        .insert([{ id: user.id, name: pending.name, standard: pending.standard }]);
+
+                    if (!insertError) {
+                        localStorage.removeItem('coinflow_pending_profile');
+                    } else {
+                        console.warn('Could not save pending profile:', insertError.message);
+                    }
+                }
+            } catch (err) {
+                console.warn('Invalid pending profile data', err);
             }
         }
 
