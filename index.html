@@ -1495,6 +1495,21 @@
                     initTheme();
                     localStorage.setItem('coinflow_student_state', JSON.stringify(state));
                 });
+
+                // Forgot Password Modal Handlers
+                document.getElementById('forgot-password-form')?.addEventListener('submit', handleForgotPassword);
+                document.getElementById('close-forgot-modal')?.addEventListener('click', () => {
+                    document.getElementById('forgot-password-modal').classList.add('hidden');
+                });
+
+                // Profile Settings Handlers
+                document.getElementById('page-btn-upload-avatar')?.addEventListener('click', () => {
+                    document.getElementById('profile-avatar-input').click();
+                });
+
+                document.getElementById('profile-avatar-input')?.addEventListener('change', uploadProfileAvatar);
+
+                document.getElementById('page-btn-change-password')?.addEventListener('click', showChangePasswordModal);
             }
 
             function startApp() {
