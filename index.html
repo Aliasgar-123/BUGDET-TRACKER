@@ -742,10 +742,18 @@
             if (isSignUpMode) {
                 if (!name || !standard) return alert("Please fill out your Name and Standard.");
 
-                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: name
+                        }
+                    }
+                });
                 if (error) return alert("Sign Up Error: " + error.message);
 
-                const user = data.user;
+                const user = data.user ?? data.session?.user;
                 if (user) {
                     const { error: profileError } = await supabaseClient
                         .from('profiles')
@@ -753,16 +761,27 @@
 
                     if (profileError) {
                         alert("Account created, but profile parameters failed: " + profileError.message);
-                    } else {
-                        await saveInitialLedger();
-                        alert("Sign up successful! Please check your email for verification if your Supabase project requires it.");
-                        toggleAuthMode(false);
                     }
+
+                    if (data.session?.user) {
+                        await loadDashboardData(data.session.user);
+                        await loadStateFromSupabase(data.session.user);
+                        document.getElementById('auth-view').classList.add('hidden');
+                        document.getElementById('main-app-workspace').classList.remove('hidden');
+                    }
+
+                    alert("Sign up successful! Please check your email for verification if your Supabase project requires it.");
+                    toggleAuthMode(false);
                 }
             } else {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) return alert("Sign In Error: " + error.message);
-                if (data?.user) {
+                const signedInUser = data.user ?? data.session?.user;
+                if (signedInUser) {
+                    await loadDashboardData(signedInUser);
+                    await loadStateFromSupabase(signedInUser);
+                    document.getElementById('auth-view').classList.add('hidden');
+                    document.getElementById('main-app-workspace').classList.remove('hidden');
                     alert("Welcome back! Your budget data will sync to Supabase.");
                 }
             }
@@ -771,7 +790,7 @@
         async function loadDashboardData(user) {
             if (!ensureSupabaseReady()) return;
 
-            const defaultName = user?.email?.split('@')[0] || 'Campus Champ';
+            const defaultName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Campus Champ';
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
                 .select('name, standard, avatar_url')
@@ -900,19 +919,19 @@
             }
         }
 
-        supabaseClient?.auth.onAuthStateChange((event, session) => {
+        supabaseClient?.auth.onAuthStateChange(async (event, session) => {
             const authView = document.getElementById('auth-view');
             const mainAppWorkspace = document.getElementById('main-app-workspace');
             const settingsTrigger = document.getElementById('settings-page-trigger');
             const quickAddTrigger = document.getElementById('quick-add-btn');
 
-            if (session) {
+            if (session?.user) {
                 authView.classList.add('hidden');
                 mainAppWorkspace.classList.remove('hidden');
                 settingsTrigger.style.display = 'inline-flex';
                 quickAddTrigger.style.display = 'inline-flex';
-                loadDashboardData(session.user);
-                loadStateFromSupabase(session.user);
+                await loadDashboardData(session.user);
+                await loadStateFromSupabase(session.user);
             } else {
                 authView.classList.remove('hidden');
                 mainAppWorkspace.classList.add('hidden');
