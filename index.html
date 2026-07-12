@@ -117,6 +117,7 @@
                     <div>
                         <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">CoinFlow</span>
                         <span id="user-greeting" class="block text-sm font-semibold text-amber-400">Welcome, <span id="header-user-name">Campus Champ</span>! 🚀</span>
+                        <span id="header-user-email" class="block text-[11px] text-slate-300 mt-0.5">Not signed in</span>
                     </div>
                 </div>
                 <div class="md:hidden">
@@ -398,6 +399,10 @@
                         <p class="text-xs text-muted leading-relaxed mb-3">Upload a profile picture and manage your account details securely.</p>
                         <div id="profile-avatar-preview" class="w-16 h-16 rounded-xl border border-slate-700 bg-slate-950 flex items-center justify-center text-2xl mb-3 overflow-hidden">
                             📸
+                        </div>
+                        <div class="text-xs text-slate-400 mt-2">
+                            <div>Signed in as:</div>
+                            <div id="profile-user-email" class="font-semibold text-slate-100 truncate max-w-full">Not signed in</div>
                         </div>
                     </div>
                     <div class="pt-6 space-y-2">
@@ -770,6 +775,11 @@
                 .select('name, standard, avatar_url')
                 .eq('id', user.id)
                 .single();
+
+            const emailEl = document.getElementById("header-user-email");
+            const settingsEmailEl = document.getElementById("profile-user-email");
+            if (emailEl) emailEl.innerText = user.email || 'No email available';
+            if (settingsEmailEl) settingsEmailEl.innerText = user.email || 'No email available';
 
             if (error) {
                 console.error("Error drawing profile info:", error.message);
