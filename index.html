@@ -742,27 +742,44 @@
             if (isSignUpMode) {
                 if (!name || !standard) return alert("Please fill out your Name and Standard.");
 
-                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: { full_name: name }
+                    }
+                });
                 if (error) return alert("Sign Up Error: " + error.message);
 
-                const user = data.user;
-                if (user) {
+                const signUpUser = data.user ?? data.session?.user;
+                if (signUpUser) {
                     const { error: profileError } = await supabaseClient
                         .from('profiles')
-                        .insert([{ id: user.id, name: name, standard: standard }]);
+                        .insert([{ id: signUpUser.id, name: name, standard: standard }]);
 
                     if (profileError) {
                         alert("Account created, but profile parameters failed: " + profileError.message);
-                    } else {
-                        await saveInitialLedger();
-                        alert("Sign up successful! Please check your email for verification if your Supabase project requires it.");
-                        toggleAuthMode(false);
                     }
+
+                    if (data.session?.user) {
+                        await loadDashboardData(data.session.user);
+                        await loadStateFromSupabase(data.session.user);
+                        document.getElementById('auth-view').classList.add('hidden');
+                        document.getElementById('main-app-workspace').classList.remove('hidden');
+                    }
+
+                    alert("Sign up successful! Please check your email for verification if your Supabase project requires it.");
+                    toggleAuthMode(false);
                 }
             } else {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) return alert("Sign In Error: " + error.message);
-                if (data?.user) {
+                const signedInUser = data.user ?? data.session?.user;
+                if (signedInUser) {
+                    await loadDashboardData(signedInUser);
+                    await loadStateFromSupabase(signedInUser);
+                    document.getElementById('auth-view').classList.add('hidden');
+                    document.getElementById('main-app-workspace').classList.remove('hidden');
                     alert("Welcome back! Your budget data will sync to Supabase.");
                 }
             }
