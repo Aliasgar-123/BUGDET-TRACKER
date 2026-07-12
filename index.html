@@ -771,35 +771,40 @@
         async function loadDashboardData(user) {
             if (!ensureSupabaseReady()) return;
 
+            const defaultName = user?.email?.split('@')[0] || 'Campus Champ';
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
                 .select('name, standard, avatar_url')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
 
             const emailEl = document.getElementById("header-user-email");
             const settingsEmailEl = document.getElementById("profile-user-email");
             if (emailEl) emailEl.innerText = user.email || 'No email available';
             if (settingsEmailEl) settingsEmailEl.innerText = user.email || 'No email available';
 
-            if (error) {
-                console.error("Error drawing profile info:", error.message);
-                document.getElementById("welcome-text").innerText = "Hey Campus Champ";
-                document.getElementById("user-greeting").innerText = "Welcome, Campus Champ! 🚀";
-                document.getElementById("header-user-name").innerText = "Campus Champ";
-            } else if (profile) {
-                document.getElementById("welcome-text").innerText = `Hey ${profile.name}`;
-                document.getElementById("user-greeting").innerText = `Welcome, ${profile.name}! 🚀`;
-                document.getElementById("header-user-name").innerText = profile.name;
-                document.getElementById("display-standard").innerText = profile.standard;
+            const displayName = profile?.name || defaultName;
+            document.getElementById("welcome-text").innerText = `Hey ${displayName}`;
+            document.getElementById("user-greeting").innerText = `Welcome, ${displayName}! 🚀`;
+            document.getElementById("header-user-name").innerText = displayName;
 
-                if (profile.avatar_url) {
-                    const avatarEl = document.getElementById("header-user-avatar");
-                    avatarEl.style.backgroundImage = `url('${profile.avatar_url}')`;
-                    avatarEl.style.backgroundSize = 'cover';
-                    avatarEl.style.backgroundPosition = 'center';
-                    avatarEl.innerHTML = '';
-                }
+            if (profile?.standard) {
+                document.getElementById("display-standard").innerText = profile.standard;
+            }
+
+            const avatarEl = document.getElementById("header-user-avatar");
+            if (profile?.avatar_url) {
+                avatarEl.style.backgroundImage = `url('${profile.avatar_url}')`;
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.style.backgroundPosition = 'center';
+                avatarEl.innerHTML = '';
+            } else if (avatarEl) {
+                avatarEl.style.backgroundImage = '';
+                avatarEl.innerHTML = '👤';
+            }
+
+            if (error && error.message) {
+                console.warn("Profile load warning:", error.message);
             }
         }
 
@@ -1305,12 +1310,19 @@
                 const homeWorkspace = document.getElementById('main-app-workspace');
                 const settingsWorkspace = document.getElementById('settings-page-workspace');
 
-                const switchToHomeView = () => {
+                    const switchToHomeView = async () => {
+                    const authView = document.getElementById('auth-view');
                     settingsWorkspace.classList.add('hidden');
-                    const hasActiveSession = supabaseClient?.auth.getSession().data.session;
-                    if (hasActiveSession) {
-                        homeWorkspace.classList.remove('hidden');
+                    if (authView) authView.classList.add('hidden');
+
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session?.user) {
+                        return signOut();
                     }
+
+                    homeWorkspace.classList.remove('hidden');
+                    await loadDashboardData(session.user);
+                    await loadStateFromSupabase(session.user);
                     renderApp();
                 };
 
