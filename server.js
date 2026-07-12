@@ -22,19 +22,26 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 
 app.post('/delete-user', async (req, res) => {
-  const { userId, secret } = req.body;
-  if (!userId || !secret) {
-    return res.status(400).json({ error: 'userId and secret are required.' });
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid Authorization header.' });
   }
 
-  if (secret !== process.env.DELETE_USER_SECRET) {
-    return res.status(401).json({ error: 'Unauthorized.' });
+  const token = authHeader.replace('Bearer ', '').trim();
+  if (!token) {
+    return res.status(401).json({ error: 'Missing access token.' });
   }
 
   try {
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-    if (error) {
-      return res.status(500).json({ error: error.message });
+    const { data: userData, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !userData?.user) {
+      return res.status(401).json({ error: authError?.message || 'Invalid user token.' });
+    }
+
+    const userId = userData.user.id;
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (deleteError) {
+      return res.status(500).json({ error: deleteError.message });
     }
 
     await supabaseAdmin.from('profiles').delete().eq('id', userId);

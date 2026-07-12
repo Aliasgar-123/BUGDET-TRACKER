@@ -454,12 +454,12 @@
                         <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mb-4 text-xl">
                             ⚠️
                         </div>
-                        <h3 class="text-lg font-bold text-slate-200 mb-1">Delete Profile Data</h3>
-                        <p class="text-xs text-muted leading-relaxed">Removes your profile metadata and synced ledger data from Supabase. The authentication user record remains active unless removed from Supabase Auth dashboard.</p>
+                        <h3 class="text-lg font-bold text-slate-200 mb-1">Delete Account</h3>
+                        <p class="text-xs text-muted leading-relaxed">Deletes your Supabase auth account, profile metadata, and synced ledger data. This is permanent and will sign you out.</p>
                     </div>
                     <div class="pt-6">
                         <button id="page-btn-delete-account" onclick="deleteAccountAndData()" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 transition-all">
-                            Delete Profile Data
+                            Delete Account
                         </button>
                     </div>
                 </div>
@@ -601,6 +601,7 @@
         // --- SUPABASE ENGINE LAYER ---
         const SUPABASE_URL = "https://tlzavimhqxyvsolrnxnc.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsemF2aW1ocXh5dnNvbHJueG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NTY3NDQsImV4cCI6MjA5OTQzMjc0NH0.Vdn2FUp32K2iQX3cOCy7wr-qsMihdP4a_18eBEukbM0";
+        const DELETE_USER_BACKEND_URL = "http://localhost:54321/delete-user";
         let isSignUpMode = false;
 
         function createSupabaseClient() {
@@ -833,31 +834,34 @@
         async function deleteAccountAndData() {
             if (!ensureSupabaseReady()) return;
 
-            const confirmAction = confirm("🚨 CRITICAL WARNING: Are you sure you want to delete your profile metadata and synced ledger data? This will not delete the Supabase auth user account.");
+            const confirmAction = confirm("🚨 CRITICAL WARNING: Are you sure you want to permanently delete your Supabase account and all synced data? This cannot be undone.");
             if (!confirmAction) return;
 
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) return;
-
-            const [{ error: profileError }, { error: userDataError }] = await Promise.all([
-                supabaseClient
-                    .from('profiles')
-                    .delete()
-                    .eq('id', user.id),
-                supabaseClient
-                    .from('user_data')
-                    .delete()
-                    .eq('user_id', user.id)
-            ]);
-
-            if (profileError || userDataError) {
-                const message = [profileError?.message, userDataError?.message].filter(Boolean).join(' | ');
-                alert("Could not drop all cloud records: " + message);
-                return;
+            const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+            if (sessionError || !session?.user) {
+                return alert('No active authenticated session was found.');
             }
 
-            alert("Profile metadata and synced ledger data deleted. The auth user still exists in Supabase Auth and must be removed separately if desired.");
-            signOut();
+            try {
+                const response = await fetch(DELETE_USER_BACKEND_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result?.error || 'Failed to delete account.');
+                }
+
+                alert('Your account and synced data were deleted successfully.');
+                signOut();
+            } catch (error) {
+                alert('Delete failed: ' + (error.message || 'Unknown error'));
+            }
         }
 
         async function signOut() {
