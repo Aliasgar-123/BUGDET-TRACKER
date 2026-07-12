@@ -1003,22 +1003,28 @@
             if (!supabaseClient) return null;
 
             const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
-            if (currentSession?.user) return currentSession;
-
-            const storedPayload = getStoredAuthPayload();
-            if (storedPayload?.access_token && storedPayload?.refresh_token) {
-                const { data, error } = await supabaseClient.auth.setSession({
-                    access_token: storedPayload.access_token,
-                    refresh_token: storedPayload.refresh_token
-                });
-                if (!error && data.session?.user) {
-                    return data.session;
-                }
+            if (currentSession?.user) {
+                return currentSession;
             }
 
             const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
             if (!userError && user) {
                 return { user };
+            }
+
+            const storedPayload = getStoredAuthPayload();
+            if (storedPayload?.access_token && storedPayload?.refresh_token) {
+                try {
+                    const { data, error } = await supabaseClient.auth.setSession({
+                        access_token: storedPayload.access_token,
+                        refresh_token: storedPayload.refresh_token
+                    });
+                    if (!error && data.session?.user) {
+                        return data.session;
+                    }
+                } catch (e) {
+                    console.warn('Session restore error:', e);
+                }
             }
 
             return null;
@@ -1051,18 +1057,17 @@
         }
 
         async function initializeAuthState() {
-            if (!supabaseClient) return;
+            if (!supabaseClient) {
+                showSignedOutView();
+                return;
+            }
 
             const authView = document.getElementById('auth-view');
             const mainAppWorkspace = document.getElementById('main-app-workspace');
-            const settingsTrigger = document.getElementById('settings-page-trigger');
-            const quickAddTrigger = document.getElementById('quick-add-btn');
 
             if (authView && mainAppWorkspace) {
                 authView.classList.add('hidden');
                 mainAppWorkspace.classList.remove('hidden');
-                if (settingsTrigger) settingsTrigger.style.display = 'inline-flex';
-                if (quickAddTrigger) quickAddTrigger.style.display = 'inline-flex';
             }
 
             try {
@@ -1073,7 +1078,7 @@
                     showSignedOutView();
                 }
             } catch (error) {
-                console.warn('Session restore warning:', error.message || error);
+                console.error('Auth init error:', error);
                 showSignedOutView();
             }
         }
