@@ -702,17 +702,34 @@
                 return alert('Upload failed: ' + uploadError.message);
             }
 
-            const { data } = supabaseClient.storage.from('profile-uploads').getPublicUrl(fileName);
-            const avatarUrl = data.publicUrl;
+            let avatarUrl = null;
+            const { data: signedData, error: signedError } = await supabaseClient.storage
+                .from('profile-uploads')
+                .createSignedUrl(fileName, 60 * 60 * 24);
+
+            if (!signedError && signedData?.signedUrl) {
+                avatarUrl = signedData.signedUrl;
+            } else {
+                const { data: publicData, error: publicError } = supabaseClient.storage
+                    .from('profile-uploads')
+                    .getPublicUrl(fileName);
+                if (publicError) {
+                    return alert('Could not generate avatar URL: ' + publicError.message);
+                }
+                avatarUrl = publicData.publicUrl;
+            }
 
             await supabaseClient
                 .from('profiles')
                 .update({ avatar_url: avatarUrl })
                 .eq('id', user.id);
 
-            document.getElementById('profile-avatar-preview').style.backgroundImage = `url('${avatarUrl}')`;
-            document.getElementById('profile-avatar-preview').style.backgroundSize = 'cover';
-            document.getElementById('profile-avatar-preview').innerHTML = '';
+            const preview = document.getElementById('profile-avatar-preview');
+            if (preview) {
+                preview.style.backgroundImage = `url('${avatarUrl}')`;
+                preview.style.backgroundSize = 'cover';
+                preview.innerHTML = '';
+            }
             alert('Avatar uploaded successfully!');
         }
 
@@ -819,14 +836,21 @@
             }
 
             const avatarEl = document.getElementById("header-user-avatar");
-            if (profile?.avatar_url) {
-                avatarEl.style.backgroundImage = `url('${profile.avatar_url}')`;
-                avatarEl.style.backgroundSize = 'cover';
-                avatarEl.style.backgroundPosition = 'center';
-                avatarEl.innerHTML = '';
-            } else if (avatarEl) {
-                avatarEl.style.backgroundImage = '';
-                avatarEl.innerHTML = '👤';
+            let avatarUrl = profile?.avatar_url;
+            if (avatarUrl && !/^https?:\/\//i.test(avatarUrl)) {
+                avatarUrl = `${SUPABASE_URL}/storage/v1/object/public/profile-uploads/${avatarUrl}`;
+            }
+
+            if (avatarEl) {
+                if (avatarUrl) {
+                    avatarEl.style.backgroundImage = `url('${avatarUrl}')`;
+                    avatarEl.style.backgroundSize = 'cover';
+                    avatarEl.style.backgroundPosition = 'center';
+                    avatarEl.innerHTML = '';
+                } else {
+                    avatarEl.style.backgroundImage = '';
+                    avatarEl.innerHTML = '👤';
+                }
             }
 
             if (error && error.message) {
