@@ -999,28 +999,42 @@
 
         async function initializeAuthState() {
             if (!supabaseClient) return;
-            
-            let { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session?.user) {
-                const { data: { session: urlSession } } = await supabaseClient.auth.getSessionFromUrl();
-                session = urlSession || session;
-                if (!session?.user) {
-                    const secondTry = await supabaseClient.auth.getSession();
-                    session = secondTry.data.session || session;
-                }
-            }
 
-            if (session?.user) {
-                await showSignedInView(session.user);
-            } else {
+            try {
+                let { data: { session } } = await supabaseClient.auth.getSession();
+
+                if (!session?.user) {
+                    const { data: { session: urlSession } } = await supabaseClient.auth.getSessionFromUrl();
+                    session = urlSession || session;
+                }
+
+                if (!session?.user) {
+                    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+                    if (!userError && user) {
+                        session = { user };
+                    }
+                }
+
+                if (session?.user) {
+                    await showSignedInView(session.user);
+                } else {
+                    showSignedOutView();
+                }
+            } catch (error) {
+                console.warn('Session restore warning:', error.message || error);
                 showSignedOutView();
             }
         }
 
         supabaseClient?.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+                showSignedOutView();
+                return;
+            }
+
             if (session?.user) {
                 await showSignedInView(session.user);
-            } else {
+            } else if (event !== 'INITIAL_SESSION') {
                 showSignedOutView();
             }
         });
@@ -1420,7 +1434,8 @@
 
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (!session?.user) {
-                        return signOut();
+                        await initializeAuthState();
+                        return;
                     }
 
                     homeWorkspace.classList.remove('hidden');
