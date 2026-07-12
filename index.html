@@ -1053,6 +1053,18 @@
         async function initializeAuthState() {
             if (!supabaseClient) return;
 
+            const authView = document.getElementById('auth-view');
+            const mainAppWorkspace = document.getElementById('main-app-workspace');
+            const settingsTrigger = document.getElementById('settings-page-trigger');
+            const quickAddTrigger = document.getElementById('quick-add-btn');
+
+            if (authView && mainAppWorkspace) {
+                authView.classList.add('hidden');
+                mainAppWorkspace.classList.remove('hidden');
+                if (settingsTrigger) settingsTrigger.style.display = 'inline-flex';
+                if (quickAddTrigger) quickAddTrigger.style.display = 'inline-flex';
+            }
+
             try {
                 const session = await restoreSupabaseSession();
                 if (session?.user) {
