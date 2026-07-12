@@ -602,6 +602,7 @@
         const SUPABASE_URL = "https://tlzavimhqxyvsolrnxnc.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsemF2aW1ocXh5dnNvbHJueG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NTY3NDQsImV4cCI6MjA5OTQzMjc0NH0.Vdn2FUp32K2iQX3cOCy7wr-qsMihdP4a_18eBEukbM0";
         const DELETE_USER_BACKEND_URL = "http://localhost:54321/delete-user";
+        const AUTH_STORAGE_KEY = 'coinflow-supabase-auth';
         let isSignUpMode = false;
 
         function createSupabaseClient() {
@@ -613,7 +614,8 @@
                     persistSession: true,
                     detectSessionInUrl: true,
                     autoRefreshToken: true,
-                    storage: localStorage
+                    storage: localStorage,
+                    storageKey: AUTH_STORAGE_KEY
                 }
             });
         }
@@ -971,6 +973,57 @@
         }
 
         // Global Dynamic Auth Sync Matrix
+        function getStoredAuthPayload() {
+            if (!window.localStorage) return null;
+
+            const candidates = [];
+            for (let i = 0; i < window.localStorage.length; i++) {
+                const key = window.localStorage.key(i);
+                if (key && (key === AUTH_STORAGE_KEY || key.startsWith('sb-') && key.endsWith('-auth-token'))) {
+                    candidates.push(key);
+                }
+            }
+
+            for (const key of candidates) {
+                try {
+                    const raw = window.localStorage.getItem(key);
+                    if (!raw) continue;
+                    const parsed = JSON.parse(raw);
+                    if (parsed?.access_token && parsed?.refresh_token) {
+                        return parsed;
+                    }
+                } catch (error) {
+                    console.warn('Auth payload parse warning:', error);
+                }
+            }
+            return null;
+        }
+
+        async function restoreSupabaseSession() {
+            if (!supabaseClient) return null;
+
+            const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
+            if (currentSession?.user) return currentSession;
+
+            const storedPayload = getStoredAuthPayload();
+            if (storedPayload?.access_token && storedPayload?.refresh_token) {
+                const { data, error } = await supabaseClient.auth.setSession({
+                    access_token: storedPayload.access_token,
+                    refresh_token: storedPayload.refresh_token
+                });
+                if (!error && data.session?.user) {
+                    return data.session;
+                }
+            }
+
+            const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+            if (!userError && user) {
+                return { user };
+            }
+
+            return null;
+        }
+
         function showSignedInView(user) {
             const authView = document.getElementById('auth-view');
             const mainAppWorkspace = document.getElementById('main-app-workspace');
@@ -1001,20 +1054,7 @@
             if (!supabaseClient) return;
 
             try {
-                let { data: { session } } = await supabaseClient.auth.getSession();
-
-                if (!session?.user) {
-                    const { data: { session: urlSession } } = await supabaseClient.auth.getSessionFromUrl();
-                    session = urlSession || session;
-                }
-
-                if (!session?.user) {
-                    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-                    if (!userError && user) {
-                        session = { user };
-                    }
-                }
-
+                const session = await restoreSupabaseSession();
                 if (session?.user) {
                     await showSignedInView(session.user);
                 } else {
