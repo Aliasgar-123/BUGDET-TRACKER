@@ -449,12 +449,12 @@
                         <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mb-4 text-xl">
                             ⚠️
                         </div>
-                        <h3 class="text-lg font-bold text-slate-200 mb-1">Terminate Workspace Account</h3>
-                        <p class="text-xs text-muted leading-relaxed">Destructive step that executes an unrecoverable hard purge across your browser's complete storage sandbox environment directory layout framework structures.</p>
+                        <h3 class="text-lg font-bold text-slate-200 mb-1">Delete Profile Data</h3>
+                        <p class="text-xs text-muted leading-relaxed">Removes your profile metadata and synced ledger data from Supabase. The authentication user record remains active unless removed from Supabase Auth dashboard.</p>
                     </div>
                     <div class="pt-6">
                         <button id="page-btn-delete-account" onclick="deleteAccountAndData()" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 transition-all">
-                            Permanently Delete Profile
+                            Delete Profile Data
                         </button>
                     </div>
                 </div>
@@ -823,23 +823,31 @@
         async function deleteAccountAndData() {
             if (!ensureSupabaseReady()) return;
 
-            const confirmAction = confirm("🚨 CRITICAL WARNING: Are you sure you want to completely drop your cloud records? This cannot be undone.");
+            const confirmAction = confirm("🚨 CRITICAL WARNING: Are you sure you want to delete your profile metadata and synced ledger data? This will not delete the Supabase auth user account.");
             if (!confirmAction) return;
 
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) return;
 
-            const { error } = await supabaseClient
-                .from('profiles')
-                .delete()
-                .eq('id', user.id);
+            const [{ error: profileError }, { error: userDataError }] = await Promise.all([
+                supabaseClient
+                    .from('profiles')
+                    .delete()
+                    .eq('id', user.id),
+                supabaseClient
+                    .from('user_data')
+                    .delete()
+                    .eq('user_id', user.id)
+            ]);
 
-            if (error) {
-                alert("Could not drop records: " + error.message);
-            } else {
-                alert("Cloud storage drop verified safely. Logging out session.");
-                signOut();
+            if (profileError || userDataError) {
+                const message = [profileError?.message, userDataError?.message].filter(Boolean).join(' | ');
+                alert("Could not drop all cloud records: " + message);
+                return;
             }
+
+            alert("Profile metadata and synced ledger data deleted. The auth user still exists in Supabase Auth and must be removed separately if desired.");
+            signOut();
         }
 
         async function signOut() {
