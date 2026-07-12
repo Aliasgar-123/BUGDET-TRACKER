@@ -703,6 +703,25 @@
         }
 
         // Global Dynamic Auth Sync Matrix
+        async function initializeAuthState() {
+            if (!supabaseClient) return;
+            
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                const authView = document.getElementById('auth-view');
+                const mainAppWorkspace = document.getElementById('main-app-workspace');
+                const settingsTrigger = document.getElementById('settings-page-trigger');
+                const quickAddTrigger = document.getElementById('quick-add-btn');
+                
+                authView.classList.add('hidden');
+                mainAppWorkspace.classList.remove('hidden');
+                settingsTrigger.style.display = 'inline-flex';
+                quickAddTrigger.style.display = 'inline-flex';
+                loadDashboardData(session.user);
+                await loadStateFromSupabase(session.user);
+            }
+        }
+
         supabaseClient?.auth.onAuthStateChange((event, session) => {
             const authView = document.getElementById('auth-view');
             const mainAppWorkspace = document.getElementById('main-app-workspace');
@@ -1349,6 +1368,7 @@
                 setupTabs();
                 setupModalHandlers();
                 renderApp();
+                initializeAuthState();
             }
 
             if (document.readyState === 'loading') {
