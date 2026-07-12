@@ -610,6 +610,7 @@
                     if (profileError) {
                         alert("Account created, but profile parameters failed: " + profileError.message);
                     } else {
+                        await saveInitialLedger();
                         alert("Sign up successful! Please check your email for verification if your Supabase project requires it.");
                         toggleAuthMode(false);
                     }
@@ -714,6 +715,7 @@
                 settingsTrigger.style.display = 'inline-flex';
                 quickAddTrigger.style.display = 'inline-flex';
                 loadDashboardData(session.user);
+                loadStateFromSupabase(session.user);
             } else {
                 authView.classList.remove('hidden');
                 mainAppWorkspace.classList.add('hidden');
@@ -753,6 +755,41 @@
                             };
                         }
                     } catch(e) { console.error(e); }
+                }
+            }
+
+            async function loadStateFromSupabase(user) {
+                if (!ensureSupabaseReady()) return;
+
+                const { data, error } = await supabaseClient
+                    .from('user_data')
+                    .select('data')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+
+                if (error) {
+                    console.warn('Supabase restore failed:', error.message);
+                    return;
+                }
+
+                if (data?.data) {
+                    const cloudState = data.data;
+                    state = {
+                        ...state,
+                        ...cloudState,
+                        transactions: Array.isArray(cloudState.transactions) ? cloudState.transactions : state.transactions,
+                        debts: Array.isArray(cloudState.debts) ? cloudState.debts : state.debts,
+                        categories: cloudState.categories && typeof cloudState.categories === 'object' ? {
+                            expense: Array.isArray(cloudState.categories.expense) ? cloudState.categories.expense : state.categories.expense,
+                            income: Array.isArray(cloudState.categories.income) ? cloudState.categories.income : state.categories.income
+                        } : state.categories,
+                        theme: cloudState.theme || state.theme
+                    };
+
+                    localStorage.setItem('coinflow_student_state', JSON.stringify(state));
+                    initTheme();
+                    renderApp();
+                    refreshSelectCategories();
                 }
             }
 
