@@ -33,26 +33,39 @@ app.post('/delete-user', async (req, res) => {
   }
 
   try {
+    // 1. Identify the user safely
     const { data: userData, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !userData?.user) {
       return res.status(401).json({ error: authError?.message || 'Invalid user token.' });
     }
 
     const userId = userData.user.id;
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-    if (deleteError) {
-      return res.status(500).json({ error: deleteError.message });
+
+    // OPTIONAL: If your site has file uploads, delete their files here first!
+    // await supabaseAdmin.storage.from('avatars').remove([`${userId}/avatar.png`]);
+
+    // 2. Delete database data FIRST to avoid foreign key violations
+    const { error: profileError } = await supabaseAdmin.from('profiles').delete().eq('id', userId);
+    if (profileError) {
+      return res.status(500).json({ error: `Failed to delete profile: ${profileError.message}` });
     }
 
-    await supabaseAdmin.from('profiles').delete().eq('id', userId);
-    await supabaseAdmin.from('user_data').delete().eq('user_id', userId);
+    const { error: dataError } = await supabaseAdmin.from('user_data').delete().eq('user_id', userId);
+    if (dataError) {
+      return res.status(500).json({ error: `Failed to delete user data: ${dataError.message}` });
+    }
+
+    // 3. Delete the actual login credentials LAST
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (deleteError) {
+      return res.status(500).json({ error: `Failed to delete auth user: ${deleteError.message}` });
+    }
 
     return res.json({ ok: true });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Unknown error.' });
   }
 });
-
 app.listen(PORT, () => {
   console.log(`Delete-user backend listening on port ${PORT}`);
 });
