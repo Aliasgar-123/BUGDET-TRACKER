@@ -601,7 +601,7 @@
         // --- SUPABASE ENGINE LAYER ---
         const SUPABASE_URL = "https://tlzavimhqxyvsolrnxnc.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsemF2aW1ocXh5dnNvbHJueG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NTY3NDQsImV4cCI6MjA5OTQzMjc0NH0.Vdn2FUp32K2iQX3cOCy7wr-qsMihdP4a_18eBEukbM0";
-        const DELETE_USER_BACKEND_URL = "http://localhost:54321/delete-user";
+        const DELETE_USER_BACKEND_URL = '/api/delete-user';
         const AUTH_STORAGE_KEY = 'coinflow-supabase-auth';
         let isSignUpMode = false;
 
@@ -684,6 +684,45 @@
             }
         }
 
+        function resolveAvatarUrl(avatarPath) {
+            if (!avatarPath) return '';
+            if (/^https?:\/\//i.test(avatarPath)) return avatarPath;
+            if (!supabaseClient) return '';
+
+            const { data } = supabaseClient.storage.from('profile-uploads').getPublicUrl(avatarPath);
+            return data?.publicUrl || avatarPath;
+        }
+
+        function renderAvatarElement(avatarEl, avatarUrl, fallbackText = '👤') {
+            if (!avatarEl) return;
+
+            if (avatarUrl) {
+                avatarEl.style.backgroundImage = `url('${avatarUrl}')`;
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.style.backgroundPosition = 'center';
+                avatarEl.style.backgroundRepeat = 'no-repeat';
+                avatarEl.innerHTML = '';
+
+                const img = new Image();
+                img.onload = () => {
+                    avatarEl.style.backgroundImage = `url('${avatarUrl}')`;
+                    avatarEl.style.backgroundSize = 'cover';
+                    avatarEl.style.backgroundPosition = 'center';
+                };
+                img.onerror = () => {
+                    console.warn('Avatar image failed to load:', avatarUrl);
+                    avatarEl.style.backgroundImage = '';
+                    avatarEl.innerHTML = fallbackText;
+                };
+                img.src = avatarUrl;
+            } else {
+                avatarEl.style.backgroundImage = '';
+                avatarEl.style.backgroundSize = '';
+                avatarEl.style.backgroundPosition = '';
+                avatarEl.innerHTML = fallbackText;
+            }
+        }
+
         async function uploadProfileAvatar() {
             if (!ensureSupabaseReady()) return;
 
@@ -701,37 +740,31 @@
                 .upload(fileName, file, { upsert: true });
 
             if (uploadError) {
+                console.error('Avatar upload failed:', uploadError);
                 return alert('Upload failed: ' + uploadError.message);
             }
 
-            let avatarUrl = null;
-            const { data: signedData, error: signedError } = await supabaseClient.storage
+            const { data: publicData } = supabaseClient.storage
                 .from('profile-uploads')
-                .createSignedUrl(fileName, 60 * 60 * 24);
+                .getPublicUrl(fileName);
 
-            if (!signedError && signedData?.signedUrl) {
-                avatarUrl = signedData.signedUrl;
-            } else {
-                const { data: publicData, error: publicError } = supabaseClient.storage
-                    .from('profile-uploads')
-                    .getPublicUrl(fileName);
-                if (publicError) {
-                    return alert('Could not generate avatar URL: ' + publicError.message);
-                }
-                avatarUrl = publicData.publicUrl;
+            if (!publicData?.publicUrl) {
+                return alert('Could not generate avatar URL for the uploaded image.');
             }
 
-            await supabaseClient
+            const avatarUrl = publicData.publicUrl;
+
+            const { error: profileUpdateError } = await supabaseClient
                 .from('profiles')
-                .update({ avatar_url: avatarUrl })
-                .eq('id', user.id);
+                .upsert({ id: user.id, avatar_url: avatarUrl }, { onConflict: 'id' });
+
+            if (profileUpdateError) {
+                console.error('Profile avatar update failed:', profileUpdateError);
+                return alert('Avatar upload succeeded, but the profile could not be updated: ' + profileUpdateError.message);
+            }
 
             const preview = document.getElementById('profile-avatar-preview');
-            if (preview) {
-                preview.style.backgroundImage = `url('${avatarUrl}')`;
-                preview.style.backgroundSize = 'cover';
-                preview.innerHTML = '';
-            }
+            renderAvatarElement(preview, avatarUrl, '📸');
             alert('Avatar uploaded successfully!');
         }
 
@@ -755,6 +788,18 @@
             }
         }
 
+        function getPendingProfile() {
+            const pendingStr = localStorage.getItem('coinflow_pending_profile');
+            if (!pendingStr) return null;
+
+            try {
+                return JSON.parse(pendingStr);
+            } catch (error) {
+                console.warn('Could not parse pending profile data:', error);
+                return null;
+            }
+        }
+
         async function handleAuthSubmit() {
             if (!ensureSupabaseReady()) return;
 
@@ -773,7 +818,11 @@
                     email,
                     password,
                     options: {
-                        data: { full_name: name }
+                        data: {
+                            full_name: name,
+                            name,
+                            standard
+                        }
                     }
                 });
                 if (error) return alert("Sign Up Error: " + error.message);
@@ -783,7 +832,7 @@
                 if (signUpUser) {
                     const { error: profileError } = await supabaseClient
                         .from('profiles')
-                        .insert([{ id: signUpUser.id, name, standard }]);
+                        .upsert([{ id: signUpUser.id, name, full_name: name, standard }], { onConflict: 'id' });
 
                     if (profileError) {
                         console.warn("Profile insert warning:", profileError.message);
@@ -816,6 +865,7 @@
             await ensurePendingProfileSaved(user);
 
             const defaultName = user?.email?.split('@')[0] || 'Campus Champ';
+            const pendingProfile = getPendingProfile();
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
                 .select('name, full_name, standard, avatar_url')
@@ -828,32 +878,21 @@
             if (settingsEmailEl) settingsEmailEl.innerText = user.email || 'No email available';
 
             const metadataName = user?.user_metadata?.full_name || user?.user_metadata?.name;
-            const displayName = profile?.name || profile?.full_name || metadataName || defaultName;
+            const resolvedProfile = profile || pendingProfile || {};
+            const displayName = resolvedProfile.name || resolvedProfile.full_name || metadataName || defaultName;
+            const displayStandard = resolvedProfile.standard || user?.user_metadata?.standard || pendingProfile?.standard || '—';
+
             document.getElementById("welcome-text").innerText = `Hey ${displayName}`;
             document.getElementById("user-greeting").innerText = `Welcome, ${displayName}! 🚀`;
             document.getElementById("header-user-name").innerText = displayName;
-
-            if (profile?.standard) {
-                document.getElementById("display-standard").innerText = profile.standard;
-            }
+            document.getElementById("display-standard").innerText = displayStandard;
 
             const avatarEl = document.getElementById("header-user-avatar");
-            let avatarUrl = profile?.avatar_url;
-            if (avatarUrl && !/^https?:\/\//i.test(avatarUrl)) {
-                avatarUrl = `${SUPABASE_URL}/storage/v1/object/public/profile-uploads/${avatarUrl}`;
-            }
+            const settingsPreviewEl = document.getElementById("profile-avatar-preview");
+            const avatarUrl = resolveAvatarUrl(resolvedProfile.avatar_url || user?.user_metadata?.avatar_url);
 
-            if (avatarEl) {
-                if (avatarUrl) {
-                    avatarEl.style.backgroundImage = `url('${avatarUrl}')`;
-                    avatarEl.style.backgroundSize = 'cover';
-                    avatarEl.style.backgroundPosition = 'center';
-                    avatarEl.innerHTML = '';
-                } else {
-                    avatarEl.style.backgroundImage = '';
-                    avatarEl.innerHTML = '👤';
-                }
-            }
+            renderAvatarElement(avatarEl, avatarUrl, '👤');
+            renderAvatarElement(settingsPreviewEl, avatarUrl, '📸');
 
             if (error && error.message) {
                 console.warn("Profile load warning:", error.message);
@@ -879,24 +918,17 @@
                 return;
             }
 
-            const pendingStr = localStorage.getItem('coinflow_pending_profile');
-            if (!pendingStr) return;
+            const pending = getPendingProfile();
+            if (!pending?.name || !pending?.standard) return;
 
-            try {
-                const pending = JSON.parse(pendingStr);
-                if (pending?.name && pending?.standard) {
-                    const { error: insertError } = await supabaseClient
-                        .from('profiles')
-                        .insert([{ id: user.id, name: pending.name, standard: pending.standard }]);
+            const { error: insertError } = await supabaseClient
+                .from('profiles')
+                .upsert([{ id: user.id, name: pending.name, full_name: pending.name, standard: pending.standard }], { onConflict: 'id' });
 
-                    if (!insertError) {
-                        localStorage.removeItem('coinflow_pending_profile');
-                    } else {
-                        console.warn('Could not save pending profile:', insertError.message);
-                    }
-                }
-            } catch (err) {
-                console.warn('Invalid pending profile data', err);
+            if (!insertError) {
+                localStorage.removeItem('coinflow_pending_profile');
+            } else {
+                console.warn('Could not save pending profile:', insertError.message);
             }
         }
 
@@ -954,9 +986,15 @@
                     throw new Error(result?.error || 'Failed to delete account.');
                 }
 
+                sessionStorage.clear();
+                localStorage.removeItem('coinflow_pending_profile');
+                localStorage.removeItem('coinflow_student_state');
+                localStorage.removeItem(AUTH_STORAGE_KEY);
+                await signOut();
                 alert('Your account and synced data were deleted successfully.');
-                signOut();
+                window.location.reload();
             } catch (error) {
+                console.error('Delete account failed:', error);
                 alert('Delete failed: ' + (error.message || 'Unknown error'));
             }
         }
@@ -1062,14 +1100,6 @@
                 return;
             }
 
-            const authView = document.getElementById('auth-view');
-            const mainAppWorkspace = document.getElementById('main-app-workspace');
-
-            if (authView && mainAppWorkspace) {
-                authView.classList.add('hidden');
-                mainAppWorkspace.classList.remove('hidden');
-            }
-
             try {
                 const session = await restoreSupabaseSession();
                 if (session?.user) {
@@ -1089,9 +1119,18 @@
                 return;
             }
 
+            if (event === 'INITIAL_SESSION') {
+                if (session?.user) {
+                    await showSignedInView(session.user);
+                } else {
+                    showSignedOutView();
+                }
+                return;
+            }
+
             if (session?.user) {
                 await showSignedInView(session.user);
-            } else if (event !== 'INITIAL_SESSION') {
+            } else {
                 showSignedOutView();
             }
         });

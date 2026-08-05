@@ -21,7 +21,7 @@ const supabaseAdmin = createClient(
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-app.post('/delete-user', async (req, res) => {
+async function deleteUserById(req, res) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or invalid Authorization header.' });
@@ -65,7 +65,11 @@ app.post('/delete-user', async (req, res) => {
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Unknown error.' });
   }
-});
+}
+
+app.post('/api/delete-user', deleteUserById);
+app.post('/delete-user', deleteUserById);
+
 app.listen(PORT, () => {
   console.log(`Delete-user backend listening on port ${PORT}`);
 });
