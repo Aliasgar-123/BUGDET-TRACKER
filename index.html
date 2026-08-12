@@ -734,63 +734,93 @@
         }
 
         async function uploadProfileAvatar() {
-            if (!ensureSupabaseReady()) return;
+            try {
+                if (!ensureSupabaseReady()) return;
 
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) return alert('No active user session');
+                const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+                if (userError || !user) throw new Error('No active user session');
 
-            const fileInput = document.getElementById('profile-avatar-input');
-            const file = fileInput.files[0];
-            if (!file) return;
+                const fileInput = document.getElementById('profile-avatar-input');
+                const file = fileInput.files[0];
+                if (!file) return;
 
-            const fileName = `avatars/${user.id}/profile-${Date.now()}.${file.name.split('.').pop()}`;
+                const bucketName = 'profile-uploads';
+                const folderPath = `avatars/${user.id}`;
 
-            const { error: uploadError } = await supabaseClient.storage
-                .from('profile-uploads')
-                .upload(fileName, file, { upsert: true });
+                // 1. List all existing files inside the user's folder
+                const { data: existingFiles, error: listError } = await supabaseClient
+                    .storage
+                    .from(bucketName)
+                    .list(folderPath);
 
-            if (uploadError) {
-                console.error('Avatar upload failed:', uploadError);
-                return alert('Upload failed: ' + uploadError.message);
-            }
-
-            const { data: publicData } = supabaseClient.storage
-                .from('profile-uploads')
-                .getPublicUrl(fileName);
-
-            if (!publicData?.publicUrl) {
-                return alert('Could not generate avatar URL for the uploaded image.');
-            }
-
-            const avatarUrl = publicData.publicUrl;
-
-            // Try updating existing profile
-            const { data: updateData, error: updateError } = await supabaseClient
-                .from('profiles')
-                .update({ avatar_url: avatarUrl })
-                .eq('id', user.id);
-
-            // If update failed or affected 0 rows, insert a new profile with fallback name
-            if (updateError || !updateData || updateData.length === 0) {
-                const userFullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email.split('@')[0];
-                
-                const { error: insertError } = await supabaseClient
-                    .from('profiles')
-                    .insert({
-                        id: user.id,
-                        name: userFullName,
-                        avatar_url: avatarUrl
-                    }, { onConflict: 'id' });
-
-                if (insertError) {
-                    console.error('Profile avatar update/insert failed:', insertError);
-                    return alert('Avatar upload succeeded, but the profile could not be updated: ' + insertError.message);
+                if (listError) {
+                    console.warn('Could not list existing avatar files:', listError.message);
                 }
-            }
 
-            const preview = document.getElementById('profile-avatar-preview');
-            renderAvatarElement(preview, avatarUrl, '📸');
-            alert('Avatar uploaded successfully!');
+                // 2. Delete existing files if any exist
+                if (existingFiles && existingFiles.length > 0) {
+                    const filesToDelete = existingFiles.map(f => `${folderPath}/${f.name}`);
+                    const { error: removeError } = await supabaseClient
+                        .storage
+                        .from(bucketName)
+                        .remove(filesToDelete);
+
+                    if (removeError) {
+                        console.warn('Failed to clean up previous avatar files:', removeError.message);
+                    }
+                }
+
+                // 3. Upload the new file
+                const fileExt = file.name.split('.').pop();
+                const fileName = `avatar_${Date.now()}.${fileExt}`;
+                const filePath = `${folderPath}/${fileName}`;
+
+                const { error: uploadError } = await supabaseClient
+                    .storage
+                    .from(bucketName)
+                    .upload(filePath, file, { upsert: true });
+
+                if (uploadError) throw new Error(uploadError.message);
+
+                // 4. Resolve the public URL
+                const { data: publicUrlData } = supabaseClient
+                    .storage
+                    .from(bucketName)
+                    .getPublicUrl(filePath);
+
+                const avatarUrl = publicUrlData?.publicUrl;
+                if (!avatarUrl) throw new Error('Could not generate avatar URL for the uploaded image.');
+
+                // 5. Update the profiles table
+                const { data: updateData, error: updateError } = await supabaseClient
+                    .from('profiles')
+                    .update({ avatar_url: avatarUrl })
+                    .eq('id', user.id);
+
+                // If update failed or affected 0 rows, insert a new profile with fallback name
+                if (updateError || !updateData || updateData.length === 0) {
+                    const userFullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email.split('@')[0];
+                    
+                    const { error: insertError } = await supabaseClient
+                        .from('profiles')
+                        .insert({
+                            id: user.id,
+                            name: userFullName,
+                            avatar_url: avatarUrl
+                        }, { onConflict: 'id' });
+
+                    if (insertError) throw new Error(insertError.message);
+                }
+
+                // 6. Refresh UI
+                const preview = document.getElementById('profile-avatar-preview');
+                renderAvatarElement(preview, avatarUrl, '📸');
+                alert('Avatar uploaded successfully!');
+
+            } catch (err) {
+                console.error('Avatar upload failed:', err);
+                alert(`Avatar upload failed: ${err.message}`);
+            }
         }
 
         async function showChangePasswordModal() {
