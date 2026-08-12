@@ -764,13 +764,28 @@
 
             const avatarUrl = publicData.publicUrl;
 
-            const { error: profileUpdateError } = await supabaseClient
+            // Try updating existing profile
+            const { data: updateData, error: updateError } = await supabaseClient
                 .from('profiles')
-                .upsert({ id: user.id, avatar_url: avatarUrl }, { onConflict: 'id' });
+                .update({ avatar_url: avatarUrl })
+                .eq('id', user.id);
 
-            if (profileUpdateError) {
-                console.error('Profile avatar update failed:', profileUpdateError);
-                return alert('Avatar upload succeeded, but the profile could not be updated: ' + profileUpdateError.message);
+            // If update failed or affected 0 rows, insert a new profile with fallback name
+            if (updateError || !updateData || updateData.length === 0) {
+                const userFullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email.split('@')[0];
+                
+                const { error: insertError } = await supabaseClient
+                    .from('profiles')
+                    .insert({
+                        id: user.id,
+                        name: userFullName,
+                        avatar_url: avatarUrl
+                    }, { onConflict: 'id' });
+
+                if (insertError) {
+                    console.error('Profile avatar update/insert failed:', insertError);
+                    return alert('Avatar upload succeeded, but the profile could not be updated: ' + insertError.message);
+                }
             }
 
             const preview = document.getElementById('profile-avatar-preview');
