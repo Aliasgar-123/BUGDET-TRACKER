@@ -1280,16 +1280,13 @@
                     document.getElementById('label-current-month-expense').innerText = `${monthNames[currentMonth]} Debits`;
                 }
 
-                // Get filtered transactions
-                const filteredTransactions = getFilteredTransactions();
-
+                // === SUMMARY METRICS: Calculate from ALL transactions (not filtered) ===
                 let aggregateCredit = 0;
                 let aggregateDebit = 0;
                 let currentMonthIncome = 0;
                 let currentMonthExpense = 0;
 
-                // Calculate metrics based on filtered transactions
-                filteredTransactions.forEach(t => {
+                state.transactions.forEach(t => {
                     const amt = parseFloat(t.amount);
                     const isIOURelated = t.isIOU === true;
 
@@ -1328,6 +1325,9 @@
                 
                 if(document.getElementById('badge-lendings-count')) document.getElementById('badge-lendings-count').innerText = activeLendingsCount;
                 if(document.getElementById('badge-borrowings-count')) document.getElementById('badge-borrowings-count').innerText = activeBorrowingsCount;
+
+                // === TABLE DISPLAY: Render only filtered transactions ===
+                const filteredTransactions = getFilteredTransactions();
 
                 const tableBody = document.getElementById('transaction-table-rows');
                 if(tableBody) {
