@@ -289,7 +289,17 @@
                         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
                             <div class="lg:col-span-3 space-y-4">
                                 <div class="p-6 rounded-2xl border interactive-card">
-                                    <h2 class="text-lg font-bold mb-4 text-amber-100">Campus Expense Ledger</h2>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h2 class="text-lg font-bold text-amber-100">Campus Expense Ledger</h2>
+                                        <div class="flex gap-3 flex-wrap">
+                                            <select id="filter-category" class="px-3 py-2 rounded-lg border bg-slate-950 border-slate-800 text-xs font-semibold text-slate-100 hover:border-amber-400/50 focus:border-amber-400 transition-all">
+                                                <option value="">All Categories</option>
+                                            </select>
+                                            <select id="filter-month" class="px-3 py-2 rounded-lg border bg-slate-950 border-slate-800 text-xs font-semibold text-slate-100 hover:border-amber-400/50 focus:border-amber-400 transition-all">
+                                                <option value="">All Time</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                     <div class="overflow-x-auto custom-scrollbar">
                                         <table class="w-full text-left border-collapse text-sm">
                                             <thead>
@@ -1148,6 +1158,11 @@
                 }
             };
 
+            let filterState = {
+                category: '',
+                month: ''
+            };
+
             let chartInstance = null;
 
             function loadState() {
@@ -1260,6 +1275,69 @@
                 });
             }
 
+            function populateFilterDropdowns() {
+                // Populate category filter with all unique categories from transactions
+                const categorySelect = document.getElementById('filter-category');
+                const monthSelect = document.getElementById('filter-month');
+
+                if (categorySelect) {
+                    const categories = new Set();
+                    state.transactions.forEach(t => {
+                        if (t.category) categories.add(t.category);
+                    });
+                    
+                    const currentValue = categorySelect.value;
+                    categorySelect.innerHTML = '<option value="">All Categories</option>';
+                    
+                    Array.from(categories).sort().forEach(cat => {
+                        const opt = document.createElement('option');
+                        opt.value = cat;
+                        opt.innerText = cat;
+                        categorySelect.appendChild(opt);
+                    });
+                    
+                    categorySelect.value = currentValue;
+                }
+
+                if (monthSelect) {
+                    const months = new Set();
+                    state.transactions.forEach(t => {
+                        if (t.date) {
+                            const monthKey = t.date.substring(0, 7); // Format: YYYY-MM
+                            months.add(monthKey);
+                        }
+                    });
+                    
+                    const currentValue = monthSelect.value;
+                    monthSelect.innerHTML = '<option value="">All Time</option>';
+                    
+                    Array.from(months).sort().reverse().forEach(month => {
+                        const [year, monthNum] = month.split('-');
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        const opt = document.createElement('option');
+                        opt.value = month;
+                        opt.innerText = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+                        monthSelect.appendChild(opt);
+                    });
+                    
+                    monthSelect.value = currentValue;
+                }
+            }
+
+            function getFilteredTransactions() {
+                return state.transactions.filter(t => {
+                    const categoryMatch = !filterState.category || t.category === filterState.category;
+                    const monthMatch = !filterState.month || t.date?.startsWith(filterState.month);
+                    return categoryMatch && monthMatch;
+                });
+            }
+
+            function applyDashboardFilters() {
+                filterState.category = document.getElementById('filter-category')?.value || '';
+                filterState.month = document.getElementById('filter-month')?.value || '';
+                renderApp();
+            }
+
             function renderConfigCategoriesList() {
                 const listContainer = document.getElementById('cfg-existing-list');
                 listContainer.innerHTML = '';
@@ -1293,12 +1371,16 @@
                     document.getElementById('label-current-month-expense').innerText = `${monthNames[currentMonth]} Debits`;
                 }
 
+                // Get filtered transactions
+                const filteredTransactions = getFilteredTransactions();
+
                 let aggregateCredit = 0;
                 let aggregateDebit = 0;
                 let currentMonthIncome = 0;
                 let currentMonthExpense = 0;
 
-                state.transactions.forEach(t => {
+                // Calculate metrics based on filtered transactions
+                filteredTransactions.forEach(t => {
                     const amt = parseFloat(t.amount);
                     const isIOURelated = t.isIOU === true;
 
@@ -1341,10 +1423,10 @@
                 const tableBody = document.getElementById('transaction-table-rows');
                 if(tableBody) {
                     tableBody.innerHTML = '';
-                    if(state.transactions.length === 0) {
-                        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-xs text-muted">No transactions recorded yet. Click '+ Add Cash Log' to start!</td></tr>`;
+                    if(filteredTransactions.length === 0) {
+                        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-xs text-muted">No transactions found. ${filterState.category || filterState.month ? 'Try adjusting your filters.' : 'Click "Add Cash Log" to start!'}</td></tr>`;
                     } else {
-                        [...state.transactions].reverse().forEach(t => {
+                        [...filteredTransactions].reverse().forEach(t => {
                             const tr = document.createElement('tr');
                             tr.className = "hover:bg-slate-900/60 transition-colors border-b border-slate-900/40";
                             tr.innerHTML = `
@@ -1440,11 +1522,13 @@
                 }
 
                 updateChart();
+                populateFilterDropdowns();
             }
 
             function updateChart() {
+                const filteredTransactions = getFilteredTransactions();
                 const categorySums = {};
-                state.transactions.forEach(t => {
+                filteredTransactions.forEach(t => {
                     if(t.type === 'expense') {
                         const cat = t.category || "General";
                         categorySums[cat] = (categorySums[cat] || 0) + parseFloat(t.amount);
@@ -1774,6 +1858,10 @@
                 document.getElementById('profile-avatar-input')?.addEventListener('change', uploadProfileAvatar);
 
                 document.getElementById('page-btn-change-password')?.addEventListener('click', showChangePasswordModal);
+
+                // Dashboard Filter Handlers
+                document.getElementById('filter-category')?.addEventListener('change', applyDashboardFilters);
+                document.getElementById('filter-month')?.addEventListener('change', applyDashboardFilters);
             }
 
             function startApp() {
