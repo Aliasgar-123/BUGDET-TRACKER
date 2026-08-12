@@ -113,7 +113,6 @@
                     </svg>
                 </div>
                 <div class="hidden md:flex items-center space-x-3">
-                    <div id="header-user-avatar" class="w-10 h-10 rounded-full border border-amber-500/30 bg-slate-800 flex items-center justify-center overflow-hidden text-lg">👤</div>
                     <div>
                         <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">CoinFlow</span>
                         <span id="user-greeting" class="block text-sm font-semibold text-amber-400">Welcome, <span id="header-user-name">Campus Champ</span>! 🚀</span>
@@ -405,21 +404,14 @@
                         <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center mb-4 text-xl">
                             👤
                         </div>
-                        <h3 class="text-lg font-bold text-slate-200 mb-1">Profile & Avatar</h3>
-                        <p class="text-xs text-muted leading-relaxed mb-3">Upload a profile picture and manage your account details securely.</p>
-                        <div id="profile-avatar-preview" class="w-16 h-16 rounded-xl border border-slate-700 bg-slate-950 flex items-center justify-center text-2xl mb-3 overflow-hidden">
-                            📸
-                        </div>
+                        <h3 class="text-lg font-bold text-slate-200 mb-1">Account Settings</h3>
+                        <p class="text-xs text-muted leading-relaxed mb-3">Manage your account details securely.</p>
                         <div class="text-xs text-slate-400 mt-2">
                             <div>Signed in as:</div>
                             <div id="profile-user-email" class="font-semibold text-slate-100 truncate max-w-full">Not signed in</div>
                         </div>
                     </div>
                     <div class="pt-6 space-y-2">
-                        <input type="file" id="profile-avatar-input" accept="image/*" class="hidden">
-                        <button id="page-btn-upload-avatar" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 transition-all">
-                            Upload Avatar
-                        </button>
                         <button id="page-btn-change-password" class="w-full py-2.5 px-4 rounded-xl font-bold text-sm text-center bg-blue-500/10 hover:bg-blue-500 text-blue-400 hover:text-white border border-blue-500/30 transition-all">
                             Change Password
                         </button>
@@ -694,135 +686,6 @@
             }
         }
 
-        function resolveAvatarUrl(avatarPath) {
-            if (!avatarPath) return '';
-            if (/^https?:\/\//i.test(avatarPath)) return avatarPath;
-            if (!supabaseClient) return '';
-
-            const { data } = supabaseClient.storage.from('profile-uploads').getPublicUrl(avatarPath);
-            return data?.publicUrl || avatarPath;
-        }
-
-        function renderAvatarElement(avatarEl, avatarUrl, fallbackText = '👤') {
-            if (!avatarEl) return;
-
-            if (avatarUrl) {
-                avatarEl.style.backgroundImage = `url('${avatarUrl}')`;
-                avatarEl.style.backgroundSize = 'cover';
-                avatarEl.style.backgroundPosition = 'center';
-                avatarEl.style.backgroundRepeat = 'no-repeat';
-                avatarEl.innerHTML = '';
-
-                const img = new Image();
-                img.onload = () => {
-                    avatarEl.style.backgroundImage = `url('${avatarUrl}')`;
-                    avatarEl.style.backgroundSize = 'cover';
-                    avatarEl.style.backgroundPosition = 'center';
-                };
-                img.onerror = () => {
-                    console.warn('Avatar image failed to load:', avatarUrl);
-                    avatarEl.style.backgroundImage = '';
-                    avatarEl.innerHTML = fallbackText;
-                };
-                img.src = avatarUrl;
-            } else {
-                avatarEl.style.backgroundImage = '';
-                avatarEl.style.backgroundSize = '';
-                avatarEl.style.backgroundPosition = '';
-                avatarEl.innerHTML = fallbackText;
-            }
-        }
-
-        async function uploadProfileAvatar() {
-            try {
-                if (!ensureSupabaseReady()) return;
-
-                const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-                if (userError || !user) throw new Error('No active user session');
-
-                const fileInput = document.getElementById('profile-avatar-input');
-                const file = fileInput.files[0];
-                if (!file) return;
-
-                const bucketName = 'profile-uploads';
-                const folderPath = `avatars/${user.id}`;
-
-                // 1. List all existing files inside the user's folder
-                const { data: existingFiles, error: listError } = await supabaseClient
-                    .storage
-                    .from(bucketName)
-                    .list(folderPath);
-
-                if (listError) {
-                    console.warn('Could not list existing avatar files:', listError.message);
-                }
-
-                // 2. Delete existing files if any exist
-                if (existingFiles && existingFiles.length > 0) {
-                    const filesToDelete = existingFiles.map(f => `${folderPath}/${f.name}`);
-                    const { error: removeError } = await supabaseClient
-                        .storage
-                        .from(bucketName)
-                        .remove(filesToDelete);
-
-                    if (removeError) {
-                        console.warn('Failed to clean up previous avatar files:', removeError.message);
-                    }
-                }
-
-                // 3. Upload the new file
-                const fileExt = file.name.split('.').pop();
-                const fileName = `avatar_${Date.now()}.${fileExt}`;
-                const filePath = `${folderPath}/${fileName}`;
-
-                const { error: uploadError } = await supabaseClient
-                    .storage
-                    .from(bucketName)
-                    .upload(filePath, file, { upsert: true });
-
-                if (uploadError) throw new Error(uploadError.message);
-
-                // 4. Resolve the public URL
-                const { data: publicUrlData } = supabaseClient
-                    .storage
-                    .from(bucketName)
-                    .getPublicUrl(filePath);
-
-                const avatarUrl = publicUrlData?.publicUrl;
-                if (!avatarUrl) throw new Error('Could not generate avatar URL for the uploaded image.');
-
-                // 5. Update the profiles table
-                const { data: updateData, error: updateError } = await supabaseClient
-                    .from('profiles')
-                    .update({ avatar_url: avatarUrl })
-                    .eq('id', user.id);
-
-                // If update failed or affected 0 rows, insert a new profile with fallback name
-                if (updateError || !updateData || updateData.length === 0) {
-                    const userFullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email.split('@')[0];
-                    
-                    const { error: insertError } = await supabaseClient
-                        .from('profiles')
-                        .insert({
-                            id: user.id,
-                            name: userFullName,
-                            avatar_url: avatarUrl
-                        }, { onConflict: 'id' });
-
-                    if (insertError) throw new Error(insertError.message);
-                }
-
-                // 6. Refresh UI
-                const preview = document.getElementById('profile-avatar-preview');
-                renderAvatarElement(preview, avatarUrl, '📸');
-                alert('Avatar uploaded successfully!');
-
-            } catch (err) {
-                console.error('Avatar upload failed:', err);
-                alert(`Avatar upload failed: ${err.message}`);
-            }
-        }
-
         async function showChangePasswordModal() {
             if (!ensureSupabaseReady()) return;
             const newPassword = prompt('Enter your new password:');
@@ -923,7 +786,7 @@
             const pendingProfile = getPendingProfile();
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
-                .select('name, full_name, standard, avatar_url')
+                .select('name, full_name, standard')
                 .eq('id', user.id)
                 .maybeSingle();
 
@@ -941,13 +804,6 @@
             document.getElementById("user-greeting").innerText = `Welcome, ${displayName}! 🚀`;
             document.getElementById("header-user-name").innerText = displayName;
             document.getElementById("display-standard").innerText = displayStandard;
-
-            const avatarEl = document.getElementById("header-user-avatar");
-            const settingsPreviewEl = document.getElementById("profile-avatar-preview");
-            const avatarUrl = resolveAvatarUrl(resolvedProfile.avatar_url || user?.user_metadata?.avatar_url);
-
-            renderAvatarElement(avatarEl, avatarUrl, '👤');
-            renderAvatarElement(settingsPreviewEl, avatarUrl, '📸');
 
             if (error && error.message) {
                 console.warn("Profile load warning:", error.message);
@@ -1896,12 +1752,6 @@
                 });
 
                 // Profile Settings Handlers
-                document.getElementById('page-btn-upload-avatar')?.addEventListener('click', () => {
-                    document.getElementById('profile-avatar-input').click();
-                });
-
-                document.getElementById('profile-avatar-input')?.addEventListener('change', uploadProfileAvatar);
-
                 document.getElementById('page-btn-change-password')?.addEventListener('click', showChangePasswordModal);
 
                 // Dashboard Filter Handlers

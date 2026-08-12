@@ -53,18 +53,6 @@ async function deleteUser(req, res) {
       return res.status(500).json({ error: `Failed to delete user data: ${dataError.message}` });
     }
 
-    const { data: avatarFiles, error: listError } = await supabaseAdmin.storage
-      .from('profile-uploads')
-      .list(userId, { limit: 100 });
-
-    if (!listError && avatarFiles?.length) {
-      const paths = avatarFiles.filter(file => file?.name).map(file => `${userId}/${file.name}`);
-      if (paths.length) {
-        const { error: removeError } = await supabaseAdmin.storage.from('profile-uploads').remove(paths);
-        if (removeError) console.warn('Avatar cleanup warning:', removeError.message);
-      }
-    }
-
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (deleteError) return res.status(500).json({ error: `Failed to delete auth user: ${deleteError.message}` });
 
