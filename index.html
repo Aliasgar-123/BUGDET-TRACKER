@@ -1010,46 +1010,6 @@
             document.getElementById('user-greeting').innerText = 'Hey Campus Champ! 🚀';
         }
 
-        async function initializeAuthState() {
-            if (!supabaseClient) {
-                showSignedOutView();
-                return;
-            }
-
-            try {
-                const session = await restoreSupabaseSession();
-                if (session?.user) {
-                    await showSignedInView(session.user);
-                } else {
-                    showSignedOutView();
-                }
-            } catch (error) {
-                console.error('Auth init error:', error);
-                showSignedOutView();
-            }
-        }
-
-        supabaseClient?.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-                showSignedOutView();
-                return;
-            }
-
-            if (event === 'INITIAL_SESSION') {
-                if (session?.user) {
-                    await showSignedInView(session.user);
-                } else {
-                    showSignedOutView();
-                }
-                return;
-            }
-
-            if (session?.user) {
-                await showSignedInView(session.user);
-            } else {
-                showSignedOutView();
-            }
-        });
 
 
         // --- APPLICATION LOGIC MATRIX LAYER ---
@@ -1768,13 +1728,67 @@
                 document.getElementById('filter-month')?.addEventListener('change', applyDashboardFilters);
             }
 
-            function startApp() {
+            async function initAuth() {
+                if (!supabaseClient) {
+                    showSignedOutView();
+                    return false;
+                }
+
+                try {
+                    // Await session restoration before proceeding
+                    const session = await restoreSupabaseSession();
+                    if (session?.user) {
+                        await showSignedInView(session.user);
+                        return true;
+                    } else {
+                        showSignedOutView();
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Auth initialization error:', error);
+                    showSignedOutView();
+                    return false;
+                }
+            }
+
+            async function startApp() {
                 loadState();
                 initTheme();
                 setupTabs();
                 setupModalHandlers();
+
+                // Check auth BEFORE rendering app UI
+                const isAuthenticated = await initAuth();
+
+                // Render app state
                 renderApp();
-                initializeAuthState();
+
+                // Setup auth state listener for subsequent changes
+                setupAuthStateListener();
+            }
+
+            function setupAuthStateListener() {
+                supabaseClient?.auth.onAuthStateChange(async (event, session) => {
+                    if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+                        showSignedOutView();
+                        return;
+                    }
+
+                    if (event === 'INITIAL_SESSION') {
+                        if (session?.user) {
+                            await showSignedInView(session.user);
+                        } else {
+                            showSignedOutView();
+                        }
+                        return;
+                    }
+
+                    if (session?.user) {
+                        await showSignedInView(session.user);
+                    } else {
+                        showSignedOutView();
+                    }
+                });
             }
 
             if (document.readyState === 'loading') {
