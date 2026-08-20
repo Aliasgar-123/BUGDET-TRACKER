@@ -715,14 +715,6 @@
         const AUTH_STORAGE_KEY = 'coinflow-supabase-auth';
         let isSignUpMode = false;
 
-        // Auth States
-        const AuthState = {
-            INITIALIZING: 'AUTH_INITIALIZING',
-            AUTHENTICATED: 'AUTHENTICATED',
-            SIGNED_OUT: 'AUTH_SIGNED_OUT'
-        };
-        let currentAuthState = AuthState.INITIALIZING;
-
         function createSupabaseClient() {
             if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes("YOUR_") || SUPABASE_ANON_KEY.includes("YOUR_")) {
                 return null;
@@ -829,7 +821,7 @@
             try {
                 return JSON.parse(pendingStr);
             } catch (error) {
-                console.warn('[AUTH] Could not parse pending profile data:', error);
+                console.warn('Could not parse pending profile data:', error);
                 return null;
             }
         }
@@ -852,7 +844,11 @@
                     email,
                     password,
                     options: {
-                        data: { full_name: name, name, standard }
+                        data: {
+                            full_name: name,
+                            name,
+                            standard
+                        }
                     }
                 });
                 if (error) return alert("Sign Up Error: " + error.message);
@@ -865,7 +861,7 @@
                         .upsert([{ id: signUpUser.id, name, full_name: name, standard }], { onConflict: 'id' });
 
                     if (profileError) {
-                        console.warn("[AUTH] Profile insert warning:", profileError.message);
+                        console.warn("Profile insert warning:", profileError.message);
                     } else {
                         localStorage.removeItem('coinflow_pending_profile');
                     }
@@ -874,7 +870,7 @@
                 if (signedInUser) {
                     await showSignedInView(signedInUser);
                 } else {
-                    alert("Sign up successful! Please check your email for verification if required.");
+                    alert("Sign up successful! Please check your email for verification if your Supabase project requires it.");
                     return;
                 }
             } else {
@@ -884,6 +880,7 @@
                 if (signedInUser) {
                     await ensurePendingProfileSaved(signedInUser);
                     await showSignedInView(signedInUser);
+                    alert("Welcome back! Your budget data will sync to Supabase.");
                 }
             }
         }
@@ -917,7 +914,7 @@
             document.getElementById("display-standard").innerText = displayStandard;
 
             if (error && error.message) {
-                console.warn("[AUTH] Profile load warning:", error.message);
+                console.warn("Profile load warning:", error.message);
             }
         }
 
@@ -931,7 +928,7 @@
                 .maybeSingle();
 
             if (error) {
-                console.warn('[AUTH] Could not check existing profile:', error.message);
+                console.warn('Could not check existing profile:', error.message);
                 return;
             }
 
@@ -950,7 +947,7 @@
             if (!insertError) {
                 localStorage.removeItem('coinflow_pending_profile');
             } else {
-                console.warn('[AUTH] Could not save pending profile:', insertError.message);
+                console.warn('Could not save pending profile:', insertError.message);
             }
         }
 
@@ -1016,27 +1013,30 @@
                 alert('Your account and synced data were deleted successfully.');
                 window.location.reload();
             } catch (error) {
-                console.error('[AUTH] Delete account failed:', error);
+                console.error('Delete account failed:', error);
                 alert('Delete failed: ' + (error.message || 'Unknown error'));
             }
         }
 
         async function signOut() {
-            currentAuthState = AuthState.SIGNED_OUT;
-            if (supabaseClient) {
-                console.info('[AUTH] Explicit sign-out detected');
-                await supabaseClient.auth.signOut();
-            }
-            showSignedOutView();
+            if (!ensureSupabaseReady()) return;
+            await supabaseClient.auth.signOut();
+            document.getElementById('settings-page-workspace').classList.add('hidden');
+            document.getElementById('main-app-workspace').classList.add('hidden');
+            document.getElementById('auth-view').classList.remove('hidden');
+            localStorage.removeItem('coinflow_student_state');
+            document.getElementById('auth-email').value = '';
+            document.getElementById('auth-password').value = '';
         }
 
+        // Global Dynamic Auth Sync Matrix
         function getStoredAuthPayload() {
             if (!window.localStorage) return null;
 
             const candidates = [];
             for (let i = 0; i < window.localStorage.length; i++) {
                 const key = window.localStorage.key(i);
-                if (key && (key === AUTH_STORAGE_KEY || (key.startsWith('sb-') && key.endsWith('-auth-token')))) {
+                if (key && (key === AUTH_STORAGE_KEY || key.startsWith('sb-') && key.endsWith('-auth-token'))) {
                     candidates.push(key);
                 }
             }
@@ -1047,10 +1047,10 @@
                     if (!raw) continue;
                     const parsed = JSON.parse(raw);
                     if (parsed?.access_token && parsed?.refresh_token) {
-                        return { key, payload: parsed };
+                        return parsed;
                     }
                 } catch (error) {
-                    console.warn('[AUTH] Auth payload parse warning:', error);
+                    console.warn('Auth payload parse warning:', error);
                 }
             }
             return null;
@@ -1058,99 +1058,872 @@
 
         async function restoreSupabaseSession() {
             if (!supabaseClient) return null;
-            console.info('[AUTH] Initializing session...');
 
-            try {
-                // Step 1: Check native getSession()
-                const { data: { session }, error } = await supabaseClient.auth.getSession();
-                if (session && !error) {
-                    console.info('[AUTH] Existing session found');
-                    return session;
-                }
-
-                // Step 2: Access token expired or unvalidated — Attempt background refresh
-                console.info('[AUTH] Access token expired or unvalidated, attempting refresh...');
-                const { data: refreshData, error: refreshError } = await supabaseClient.auth.refreshSession();
-                if (refreshData?.session && !refreshError) {
-                    console.info('[AUTH] Session refreshed successfully');
-                    return refreshData.session;
-                }
-
-                // Step 3: Check legacy tokens in localStorage and attempt setSession
-                const storedEntry = getStoredAuthPayload();
-                if (storedEntry?.payload) {
-                    console.info('[AUTH] Migrating/restoring legacy session payload...');
-                    const { data: setSessionData, error: setSessionError } = await supabaseClient.auth.setSession({
-                        access_token: storedEntry.payload.access_token,
-                        refresh_token: storedEntry.payload.refresh_token
-                    });
-
-                    if (setSessionData?.session && !setSessionError) {
-                        console.info('[AUTH] Legacy session restored successfully');
-                        return setSessionData.session;
-                    }
-                }
-            } catch (error) {
-                console.warn('[AUTH] Session recovery error (network or invalid token):', error);
+            const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
+            if (currentSession?.user) {
+                return currentSession;
             }
 
-            console.info('[AUTH] No recoverable session found');
+            const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+            if (!userError && user) {
+                return { user };
+            }
+
+            const storedPayload = getStoredAuthPayload();
+            if (storedPayload?.access_token && storedPayload?.refresh_token) {
+                try {
+                    const { data, error } = await supabaseClient.auth.setSession({
+                        access_token: storedPayload.access_token,
+                        refresh_token: storedPayload.refresh_token
+                    });
+                    if (!error && data.session?.user) {
+                        return data.session;
+                    }
+                } catch (e) {
+                    console.warn('Session restore error:', e);
+                }
+            }
+
             return null;
         }
 
-        async function initAuth() {
-            if (!ensureSupabaseReady()) return;
+        function showSignedInView(user) {
+            const authView = document.getElementById('auth-view');
+            const mainAppWorkspace = document.getElementById('main-app-workspace');
+            const settingsTrigger = document.getElementById('settings-page-trigger');
+            const quickAddTrigger = document.getElementById('quick-add-btn');
 
-            currentAuthState = AuthState.INITIALIZING;
-
-            // Maintain continuous state synchronization
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                console.info(`[AUTH] Auth state event: ${event}`);
-                if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-                    currentAuthState = AuthState.SIGNED_OUT;
-                    showSignedOutView();
-                } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                    if (session?.user) {
-                        currentAuthState = AuthState.AUTHENTICATED;
-                        await showSignedInView(session.user);
-                    }
-                }
-            });
-
-            // Single authoritative initialization flow
-            const session = await restoreSupabaseSession();
-            if (session?.user) {
-                currentAuthState = AuthState.AUTHENTICATED;
-                await showSignedInView(session.user);
-            } else {
-                currentAuthState = AuthState.SIGNED_OUT;
-                showSignedOutView();
-            }
-        }
-
-        async function showSignedInView(user) {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('app-section').classList.remove('hidden');
-            document.getElementById('forgot-password-modal').classList.add('hidden');
-
-            await loadDashboardData(user);
-            if (window.loadStateFromSupabase) {
-                await window.loadStateFromSupabase();
-            }
+            authView.classList.add('hidden');
+            mainAppWorkspace.classList.remove('hidden');
+            settingsTrigger.style.display = 'inline-flex';
+            quickAddTrigger.style.display = 'inline-flex';
+            return loadDashboardData(user).then(() => loadStateFromSupabase(user));
         }
 
         function showSignedOutView() {
-            document.getElementById('auth-section').classList.remove('hidden');
-            document.getElementById('app-section').classList.add('hidden');
+            const authView = document.getElementById('auth-view');
+            const mainAppWorkspace = document.getElementById('main-app-workspace');
+            const settingsTrigger = document.getElementById('settings-page-trigger');
+            const quickAddTrigger = document.getElementById('quick-add-btn');
+
+            authView.classList.remove('hidden');
+            mainAppWorkspace.classList.add('hidden');
+            settingsTrigger.style.display = 'none';
+            quickAddTrigger.style.display = 'none';
+            document.getElementById('user-greeting').innerText = 'Hey Campus Champ! 🚀';
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initAuth();
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('reset') === 'true') {
-                setTimeout(showChangePasswordModal, 1000);
+
+
+        // --- APPLICATION LOGIC MATRIX LAYER ---
+        (function() {
+            let state = {
+                transactions: [],
+                debts: [], 
+                theme: 'dark',
+                categories: {
+                    expense: ["Food & Canteen", "Dorm & Rent", "Books & Studies", "Entertainment & Fun"],
+                    income: ["Part-time Income", "Allowance", "Scholarships & Grants"]
+                }
+            };
+
+            let filterState = {
+                type: '',
+                category: '',
+                month: ''
+            };
+
+            let chartInstance = null;
+
+            function loadState() {
+                const data = localStorage.getItem('coinflow_student_state');
+                if(data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        state = { ...state, ...parsed };
+                        if (!state.debts) state.debts = [];
+                        if (!state.theme) state.theme = 'dark';
+                        if (!state.categories || !state.categories.expense) {
+                            state.categories = {
+                                expense: ["Food & Canteen", "Dorm & Rent", "Books & Studies", "Entertainment & Fun"],
+                                income: ["Part-time Income", "Allowance", "Scholarships & Grants"]
+                            };
+                        }
+                    } catch(e) { console.error(e); }
+                }
             }
-        });
+
+            async function loadStateFromSupabase(user) {
+                if (!ensureSupabaseReady()) return;
+
+                const { data, error } = await supabaseClient
+                    .from('user_data')
+                    .select('data')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+
+                if (error) {
+                    console.warn('Supabase restore failed:', error.message);
+                    return;
+                }
+
+                if (data?.data) {
+                    const cloudState = data.data;
+                    state = {
+                        ...state,
+                        ...cloudState,
+                        transactions: Array.isArray(cloudState.transactions) ? cloudState.transactions : state.transactions,
+                        debts: Array.isArray(cloudState.debts) ? cloudState.debts : state.debts,
+                        categories: cloudState.categories && typeof cloudState.categories === 'object' ? {
+                            expense: Array.isArray(cloudState.categories.expense) ? cloudState.categories.expense : state.categories.expense,
+                            income: Array.isArray(cloudState.categories.income) ? cloudState.categories.income : state.categories.income
+                        } : state.categories,
+                        theme: cloudState.theme || state.theme
+                    };
+
+                    localStorage.setItem('coinflow_student_state', JSON.stringify(state));
+                    initTheme();
+                    renderApp();
+                    refreshSelectCategories();
+                }
+            }
+
+            async function persistStateToSupabase() {
+                if (!ensureSupabaseReady()) return;
+
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (!user) return;
+
+                const { error } = await supabaseClient
+                    .from('user_data')
+                    .upsert({
+                        user_id: user.id,
+                        data: {
+                            transactions: state.transactions,
+                            debts: state.debts,
+                            categories: state.categories,
+                            theme: state.theme
+                        }
+                    }, { onConflict: 'user_id' });
+
+                if (error) {
+                    console.warn('Supabase sync failed:', error.message);
+                }
+            }
+
+            function saveState() {
+                localStorage.setItem('coinflow_student_state', JSON.stringify(state));
+                renderApp();
+                persistStateToSupabase();
+            }
+
+            function initTheme() {
+                const sunBtn = document.getElementById('theme-sun');
+                const moonBtn = document.getElementById('theme-moon');
+                if (state.theme === 'dark') {
+                    document.documentElement.className = 'dark';
+                    sunBtn.classList.remove('hidden');
+                    moonBtn.classList.add('hidden');
+                } else {
+                    document.documentElement.className = 'light';
+                    moonBtn.classList.remove('hidden');
+                    sunBtn.classList.add('hidden');
+                }
+            }
+
+            function refreshSelectCategories() {
+                const selectElement = document.getElementById('tx-category');
+                const type = document.getElementById('tx-type').value;
+                selectElement.innerHTML = '';
+                
+                const list = state.categories[type] || [];
+                list.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.innerText = cat;
+                    selectElement.appendChild(opt);
+                });
+            }
+
+            function populateFilterDropdowns() {
+                // Populate category filter with all unique categories from transactions
+                const categorySelect = document.getElementById('filter-category');
+                const monthSelect = document.getElementById('filter-month');
+
+                if (categorySelect) {
+                    const categories = new Set();
+                    state.transactions.forEach(t => {
+                        if (t.category) categories.add(t.category);
+                    });
+                    
+                    const currentValue = categorySelect.value;
+                    categorySelect.innerHTML = '<option value="">All Categories</option>';
+                    
+                    Array.from(categories).sort().forEach(cat => {
+                        const opt = document.createElement('option');
+                        opt.value = cat;
+                        opt.innerText = cat;
+                        categorySelect.appendChild(opt);
+                    });
+                    
+                    categorySelect.value = currentValue;
+                }
+
+                if (monthSelect) {
+                    const months = new Set();
+                    state.transactions.forEach(t => {
+                        if (t.date) {
+                            const monthKey = t.date.substring(0, 7); // Format: YYYY-MM
+                            months.add(monthKey);
+                        }
+                    });
+                    
+                    const currentValue = monthSelect.value;
+                    monthSelect.innerHTML = '<option value="">All Time</option>';
+                    
+                    Array.from(months).sort().reverse().forEach(month => {
+                        const [year, monthNum] = month.split('-');
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        const opt = document.createElement('option');
+                        opt.value = month;
+                        opt.innerText = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+                        monthSelect.appendChild(opt);
+                    });
+                    
+                    monthSelect.value = currentValue;
+                }
+            }
+
+            function getFilteredTransactions() {
+                return state.transactions.filter(t => {
+                    const typeMatch = !filterState.type || t.type === filterState.type;
+                    const categoryMatch = !filterState.category || t.category === filterState.category;
+                    const monthMatch = !filterState.month || t.date?.startsWith(filterState.month);
+                    return typeMatch && categoryMatch && monthMatch;
+                });
+            }
+
+            function applyDashboardFilters() {
+                filterState.type = document.getElementById('filter-type')?.value || '';
+                filterState.category = document.getElementById('filter-category')?.value || '';
+                filterState.month = document.getElementById('filter-month')?.value || '';
+                renderApp();
+            }
+
+            function renderConfigCategoriesList() {
+                const listContainer = document.getElementById('cfg-existing-list');
+                listContainer.innerHTML = '';
+                
+                ['expense', 'income'].forEach(type => {
+                    (state.categories[type] || []).forEach(cat => {
+                        const row = document.createElement('div');
+                        row.className = "flex justify-between items-center bg-slate-950 p-1.5 rounded-lg border border-slate-800";
+                        row.innerHTML = `
+                            <span class="text-slate-300 font-medium">${cat}</span>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[10px] uppercase font-bold tracking-wider ${type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">${type}</span>
+                                <button type="button" class="text-rose-400 hover:text-rose-300 font-bold px-1 text-sm delete-category-label-btn" data-type="${type}" data-label="${cat}">✕</button>
+                            </div>
+                        `;
+                        listContainer.appendChild(row);
+                    });
+                });
+            }
+
+            function renderApp() {
+                const today = new Date();
+                const currentYear = today.getFullYear();
+                const currentMonth = today.getMonth();
+
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                if(document.getElementById('label-current-month-income')){
+                    document.getElementById('label-current-month-income').innerText = `${monthNames[currentMonth]} Credits`;
+                }
+                if(document.getElementById('label-current-month-expense')){
+                    document.getElementById('label-current-month-expense').innerText = `${monthNames[currentMonth]} Debits`;
+                }
+
+                // === SUMMARY METRICS: Calculate from ALL transactions (not filtered) ===
+                let aggregateCredit = 0;
+                let aggregateDebit = 0;
+                let currentMonthIncome = 0;
+                let currentMonthExpense = 0;
+
+                state.transactions.forEach(t => {
+                    const amt = parseFloat(t.amount);
+                    const isIOURelated = t.isIOU === true;
+
+                    if (t.type === 'income') {
+                        aggregateCredit += amt;
+                    } else {
+                        aggregateDebit += amt;
+                    }
+
+                    if (t.date) {
+                        const tDate = new Date(t.date);
+                        if (!isNaN(tDate.getTime())) {
+                            if (tDate.getFullYear() === currentYear && tDate.getMonth() === currentMonth) {
+                                if (!isIOURelated) {
+                                    if (t.type === 'income') {
+                                        currentMonthIncome += amt;
+                                    } else {
+                                        currentMonthExpense += amt;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                const netBalance = aggregateCredit - aggregateDebit;
+
+                if(document.getElementById('metric-total-balance')) document.getElementById('metric-total-balance').innerText = `$${netBalance.toFixed(2)}`;
+                if(document.getElementById('metric-monthly-income')) document.getElementById('metric-monthly-income').innerText = `$${currentMonthIncome.toFixed(2)}`;
+                if(document.getElementById('metric-monthly-expenses')) document.getElementById('metric-monthly-expenses').innerText = `$${currentMonthExpense.toFixed(2)}`;
+                if(document.getElementById('aggregate-total-credit')) document.getElementById('aggregate-total-credit').innerText = `$${aggregateCredit.toFixed(2)}`;
+                if(document.getElementById('aggregate-total-debit')) document.getElementById('aggregate-total-debit').innerText = `$${aggregateDebit.toFixed(2)}`;
+
+                const activeLendingsCount = state.debts.filter(d => d.type === 'lent' && !d.settled).length;
+                const activeBorrowingsCount = state.debts.filter(d => d.type === 'borrowed' && !d.settled).length;
+                
+                if(document.getElementById('badge-lendings-count')) document.getElementById('badge-lendings-count').innerText = activeLendingsCount;
+                if(document.getElementById('badge-borrowings-count')) document.getElementById('badge-borrowings-count').innerText = activeBorrowingsCount;
+
+                // === TABLE DISPLAY: Render only filtered transactions ===
+                const filteredTransactions = getFilteredTransactions();
+
+                const tableBody = document.getElementById('transaction-table-rows');
+                if(tableBody) {
+                    tableBody.innerHTML = '';
+                    if(filteredTransactions.length === 0) {
+                        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-xs text-muted">No transactions found. ${filterState.type || filterState.category || filterState.month ? 'Try adjusting your filters.' : 'Click "Add Cash Log" to start!'}</td></tr>`;
+                    } else {
+                        [...filteredTransactions].reverse().forEach(t => {
+                            const tr = document.createElement('tr');
+                            tr.className = "hover:bg-slate-900/60 transition-colors border-b border-slate-900/40";
+                            tr.innerHTML = `
+                                <td class="py-3 text-xs font-medium text-slate-400">${t.date}</td>
+                                <td class="py-3 px-2 font-semibold text-slate-200">${t.description}</td>
+                                <td class="py-3 px-2"><span class="px-2 py-0.5 rounded-full text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20">${t.category || 'General'}</span></td>
+                                <td class="py-3 px-2 text-right font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">
+                                    ${t.type === 'income' ? '+' : '-'}$${parseFloat(t.amount).toFixed(2)}
+                                </td>
+                                <td class="py-3 text-center">
+                                    <button class="text-rose-400 text-xs hover:underline delete-tx-btn" data-id="${t.id}">Delete</button>
+                                </td>
+                            `;
+                            tableBody.appendChild(tr);
+                        });
+                    }
+                }
+
+                const lentContainer = document.getElementById('lent-list-container');
+                const borrowedContainer = document.getElementById('borrowed-list-container');
+
+                if(lentContainer) {
+                    lentContainer.innerHTML = '';
+                    const lentDebts = state.debts.filter(d => d.type === 'lent');
+                    if(lentDebts.length === 0) {
+                        lentContainer.innerHTML = `<p class="text-xs text-muted text-center py-4">Nobody owes you any cash right now! 🎉</p>`;
+                    } else {
+                        lentDebts.forEach(d => {
+                            const item = document.createElement('div');
+                            item.className = `p-4 rounded-xl border flex flex-col justify-between gap-2 transition-all duration-200 ${d.settled ? 'opacity-40 border-slate-800 bg-slate-900/10' : 'border-amber-500/20 bg-amber-500/5 hover:border-amber-400/50 shadow-sm'}`;
+                            item.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-bold text-sm text-slate-200">${d.person}</p>
+                                        <p class="text-xs text-muted">Started: ${d.date}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-muted font-medium">Original: $${parseFloat(d.amount).toFixed(2)}</p>
+                                        <p class="text-sm font-bold text-amber-400">Owes: $${parseFloat(d.remaining ?? d.amount).toFixed(2)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center mt-1 border-t border-slate-800/60 pt-2">
+                                    <span class="text-[10px] uppercase font-bold tracking-wide ${d.settled ? 'text-slate-400' : 'text-amber-400'}">
+                                        ${d.settled ? '✅ Fully Paid' : '⏳ Active Loan'}
+                                    </span>
+                                    ${!d.settled ? `<button class="px-3 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold trigger-settle-action-btn shadow-sm" data-id="${d.id}">Collect Pay</button>` : ''}
+                                </div>
+                            `;
+                            lentContainer.appendChild(item);
+                        });
+                    }
+                }
+
+                if(borrowedContainer) {
+                    borrowedContainer.innerHTML = '';
+                    const borrowedDebts = state.debts.filter(d => d.type === 'borrowed');
+                    if(borrowedDebts.length === 0) {
+                        borrowedContainer.innerHTML = `<p class="text-xs text-muted text-center py-4">Awesome! You don't owe any money to friends. 🙌</p>`;
+                    } else {
+                        borrowedDebts.forEach(d => {
+                            const item = document.createElement('div');
+                            item.className = `p-4 rounded-xl border flex flex-col justify-between gap-2 transition-all duration-200 ${d.settled ? 'opacity-40 border-slate-800 bg-slate-900/10' : 'border-rose-500/20 bg-rose-500/5 hover:border-rose-400/50 shadow-sm'}`;
+                            item.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-bold text-sm text-slate-200">${d.person}</p>
+                                        <p class="text-xs text-muted">Borrowed: ${d.date}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-muted font-medium">Original: $${parseFloat(d.amount).toFixed(2)}</p>
+                                        <p class="text-sm font-bold text-rose-400">You Owe: $${parseFloat(d.remaining ?? d.amount).toFixed(2)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center mt-1 border-t border-slate-800/60 pt-2">
+                                    <span class="text-[10px] uppercase font-bold tracking-wide ${d.settled ? 'text-slate-400' : 'text-amber-400'}">
+                                        ${d.settled ? '✅ Settled Up' : '🚨 Outstanding Debt'}
+                                    </span>
+                                    ${!d.settled ? `<button class="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold trigger-settle-action-btn shadow-sm" data-id="${d.id}">Pay Back</button>` : ''}
+                                </div>
+                            `;
+                            borrowedContainer.appendChild(item);
+                        });
+                    }
+                }
+
+                const goalsContainer = document.getElementById('goals-list-container');
+                if(goalsContainer) {
+                    goalsContainer.innerHTML = `
+                        <div class="p-4 rounded-xl border border-dashed border-slate-800 text-center text-xs text-muted">
+                            Milestones and analytics are adjusted automatically based on Wallet Balance.
+                        </div>
+                    `;
+                }
+
+                updateChart();
+                populateFilterDropdowns();
+            }
+
+            function updateChart() {
+                const filteredTransactions = getFilteredTransactions();
+                const categorySums = {};
+                filteredTransactions.forEach(t => {
+                    if(t.type === 'expense') {
+                        const cat = t.category || "General";
+                        categorySums[cat] = (categorySums[cat] || 0) + parseFloat(t.amount);
+                    }
+                });
+
+                const labels = Object.keys(categorySums);
+                const dataValues = Object.values(categorySums);
+
+                const listContainer = document.getElementById('analytics-breakdown-list');
+                if(listContainer) {
+                    listContainer.innerHTML = '';
+                    labels.forEach((l, idx) => {
+                        const row = document.createElement('div');
+                        row.className = "flex justify-between text-sm items-center font-medium border-b border-slate-900 py-1";
+                        row.innerHTML = `<span>${l}</span><span class="font-bold text-amber-400">$${dataValues[idx].toFixed(2)}</span>`;
+                        listContainer.appendChild(row);
+                    });
+                }
+
+                if(chartInstance) { chartInstance.destroy(); }
+
+                const ctx = document.getElementById('analyticsChart');
+                if(!ctx) return;
+
+                if(labels.length === 0) {
+                    ctx.style.display = 'none';
+                    return;
+                } else {
+                    ctx.style.display = 'block';
+                }
+
+                chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: dataValues,
+                            backgroundColor: ['#f59e0b', '#fbbf24', '#b45309', '#3b82f6', '#1d4ed8', '#6366f1'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+
+            function setupTabs() {
+                const triggers = {
+                    'tab-trigger-dashboard': 'view-dashboard',
+                    'tab-trigger-analytics': 'view-analytics',
+                    'tab-trigger-lending': 'view-lending'
+                };
+
+                Object.keys(triggers).forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        el.addEventListener('click', function() {
+                            Object.keys(triggers).forEach(tId => {
+                                document.getElementById(tId).className = "tab-btn px-1 py-4 text-sm font-medium border-b-2 border-transparent text-muted hover:text-amber-400 focus:outline-none transition-all relative flex items-center gap-2";
+                                document.getElementById(triggers[tId]).classList.add('hidden');
+                                document.getElementById(triggers[tId]).classList.remove('block');
+                            });
+                            this.className = "tab-btn px-1 py-4 text-sm font-bold border-b-2 border-amber-400 text-amber-400 focus:outline-none transition-all drop-shadow-[0_0_8px_rgba(245,158,11,0.2)] relative flex items-center gap-2";
+                            document.getElementById(triggers[id]).classList.remove('hidden');
+                            document.getElementById(triggers[id]).classList.add('block');
+                        });
+                    }
+                });
+            }
+
+            function setupModalHandlers() {
+                const homeWorkspace = document.getElementById('main-app-workspace');
+                const settingsWorkspace = document.getElementById('settings-page-workspace');
+
+                    const switchToHomeView = async () => {
+                    const authView = document.getElementById('auth-view');
+                    settingsWorkspace.classList.add('hidden');
+                    if (authView) authView.classList.add('hidden');
+
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session?.user) {
+                        await initializeAuthState();
+                        return;
+                    }
+
+                    homeWorkspace.classList.remove('hidden');
+                    await loadDashboardData(session.user);
+                    await loadStateFromSupabase(session.user);
+                    renderApp();
+                };
+
+                const switchToSettingsView = () => {
+                    homeWorkspace.classList.add('hidden');
+                    settingsWorkspace.classList.remove('hidden');
+                };
+
+                document.getElementById('settings-page-trigger').addEventListener('click', switchToSettingsView);
+                document.getElementById('settings-back-to-home').addEventListener('click', switchToHomeView);
+                document.getElementById('logo-home-trigger').addEventListener('click', switchToHomeView);
+
+                const executeResetAction = () => {
+                    if(confirm("Are you sure you want to wipe clean all logged transaction rows, dynamic targets, and IOUs back to clean baseline parameters?")) {
+                        state.transactions = [];
+                        state.debts = [];
+                        saveState();
+                        alert("Ledger data arrays cleared down securely.");
+                        switchToHomeView();
+                    }
+                };
+
+                document.getElementById('page-btn-reset-data').addEventListener('click', executeResetAction);
+
+                document.getElementById('modal-tab-add').addEventListener('click', function() {
+                    this.className = "text-lg font-bold text-amber-400 border-b-2 border-amber-400 pb-1";
+                    document.getElementById('modal-tab-config').className = "text-lg font-medium text-muted pb-1 hover:text-amber-300";
+                    document.getElementById('modal-view-add').classList.replace('hidden', 'block');
+                    document.getElementById('modal-view-config').classList.replace('block', 'hidden');
+                });
+
+                document.getElementById('modal-tab-config').addEventListener('click', function() {
+                    this.className = "text-lg font-bold text-amber-400 border-b-2 border-amber-400 pb-1";
+                    document.getElementById('modal-tab-add').className = "text-lg font-medium text-muted pb-1 hover:text-amber-300";
+                    document.getElementById('modal-view-config').classList.replace('hidden', 'block');
+                    document.getElementById('modal-view-add').classList.replace('block', 'hidden');
+                    renderConfigCategoriesList();
+                });
+
+                document.getElementById('quick-add-btn').addEventListener('click', () => {
+                    document.getElementById('tx-date').valueAsDate = new Date();
+                    refreshSelectCategories();
+                    document.getElementById('transaction-modal').classList.remove('hidden');
+                });
+                document.getElementById('lending-modal-trigger-btn').addEventListener('click', () => {
+                    document.getElementById('lending-date').valueAsDate = new Date();
+                    document.getElementById('lending-modal').classList.remove('hidden');
+                });
+
+                document.querySelectorAll('.modal-close-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.getElementById(this.getAttribute('data-modal')).classList.add('hidden');
+                    });
+                });
+
+                document.getElementById('category-config-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const typeScope = document.getElementById('cfg-target-type').value;
+                    const labelInput = document.getElementById('cfg-new-label').value.trim();
+                    
+                    if(labelInput && !state.categories[typeScope].includes(labelInput)) {
+                        state.categories[typeScope].push(labelInput);
+                        this.reset();
+                        renderConfigCategoriesList();
+                        refreshSelectCategories();
+                        saveState();
+                    }
+                });
+
+                document.getElementById('cfg-existing-list').addEventListener('click', function(e) {
+                    if (e.target.classList.contains('delete-category-label-btn')) {
+                        const targetType = e.target.getAttribute('data-type');
+                        const targetLabel = e.target.getAttribute('data-label');
+                        
+                        state.categories[targetType] = state.categories[targetType].filter(cat => cat !== targetLabel);
+                        renderConfigCategoriesList();
+                        refreshSelectCategories();
+                        saveState();
+                    }
+                });
+
+                document.getElementById('transaction-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const newTx = {
+                        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                        type: document.getElementById('tx-type').value,
+                        date: document.getElementById('tx-date').value,
+                        amount: parseFloat(document.getElementById('tx-amount').value),
+                        category: document.getElementById('tx-category').value,
+                        description: document.getElementById('tx-description').value,
+                        isIOU: false
+                    };
+                    state.transactions.push(newTx);
+                    document.getElementById('transaction-modal').classList.add('hidden');
+                    this.reset();
+                    saveState();
+                });
+
+                document.getElementById('lending-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const initialAmt = parseFloat(document.getElementById('lending-amount').value);
+                    const isLent = document.getElementById('lending-type').value === 'lent';
+                    const newDebt = {
+                        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                        type: document.getElementById('lending-type').value,
+                        person: document.getElementById('lending-person').value,
+                        amount: initialAmt,
+                        remaining: initialAmt,
+                        date: document.getElementById('lending-date').value,
+                        settled: false
+                    };
+                    state.debts.push(newDebt);
+
+                    state.transactions.push({
+                        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                        type: isLent ? 'expense' : 'income',
+                        date: newDebt.date,
+                        amount: initialAmt,
+                        category: isLent ? 'Lent' : 'Borrowed',
+                        isIOU: true,
+                        description: isLent ? `Lent cash out to ${newDebt.person} 💸` : `Borrowed cash from ${newDebt.person} 🤝`
+                    });
+
+                    document.getElementById('lending-modal').classList.add('hidden');
+                    this.reset();
+                    saveState();
+                });
+
+                if(document.getElementById('transaction-table-rows')){
+                    document.getElementById('transaction-table-rows').addEventListener('click', function(e) {
+                        if(e.target.classList.contains('delete-tx-btn')) {
+                            const targetId = e.target.getAttribute('data-id');
+                            state.transactions = state.transactions.filter(t => t.id !== targetId);
+                            saveState();
+                        }
+                    });
+                }
+
+                document.getElementById('type-btn-expense').addEventListener('click', function() {
+                    this.className = "py-2 text-sm font-bold rounded-lg text-rose-400 bg-rose-500/10 border border-rose-500/20";
+                    document.getElementById('type-btn-income').className = "py-2 text-sm font-bold rounded-lg text-slate-400";
+                    document.getElementById('tx-type').value = "expense";
+                    refreshSelectCategories();
+                });
+                document.getElementById('type-btn-income').addEventListener('click', function() {
+                    this.className = "py-2 text-sm font-bold rounded-lg text-emerald-400 bg-emerald-500/10 border border-emerald-500/20";
+                    document.getElementById('type-btn-expense').className = "py-2 text-sm font-bold rounded-lg text-slate-400";
+                    document.getElementById('tx-type').value = "income";
+                    refreshSelectCategories();
+                });
+
+                const handleOpenSettleWorkflow = (e) => {
+                    const btn = e.target.closest('.trigger-settle-action-btn');
+                    if(!btn) return;
+                    const debtId = btn.getAttribute('data-id');
+                    const debtItem = state.debts.find(d => d.id === debtId);
+                    if(!debtItem) return;
+
+                    document.getElementById('settle-debt-id').value = debtId;
+                    document.getElementById('settle-date').valueAsDate = new Date();
+                    document.getElementById('settle-amount').value = '';
+                    document.getElementById('settle-error-alert').classList.add('hidden');
+                    
+                    const rem = debtItem.remaining ?? debtItem.amount;
+                    document.getElementById('settle-modal-subtitle').innerText = `Target Friend: ${debtItem.person}. Outstanding Remainder: $${parseFloat(rem).toFixed(2)}`;
+                    document.getElementById('settle-interactive-modal').classList.remove('hidden');
+                };
+
+                if(document.getElementById('lent-list-container')) document.getElementById('lent-list-container').addEventListener('click', handleOpenSettleWorkflow);
+                if(document.getElementById('borrowed-list-container')) document.getElementById('borrowed-list-container').addEventListener('click', handleOpenSettleWorkflow);
+
+                document.getElementById('close-settle-modal').addEventListener('click', () => {
+                    document.getElementById('settle-interactive-modal').classList.add('hidden');
+                });
+
+                document.getElementById('settle-interactive-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const targetId = document.getElementById('settle-debt-id').value;
+                    const payAmt = parseFloat(document.getElementById('settle-amount').value);
+                    const payDate = document.getElementById('settle-date').value;
+                    const errorContainer = document.getElementById('settle-error-alert');
+
+                    const index = state.debts.findIndex(d => d.id === targetId);
+                    if(index !== -1) {
+                        let currentRem = state.debts[index].remaining ?? state.debts[index].amount;
+                        
+                        if (payAmt > currentRem) {
+                            errorContainer.innerText = `⛔ Action Denied: Payment ($${payAmt.toFixed(2)}) exceeds remaining obligation ($${currentRem.toFixed(2)}).`;
+                            errorContainer.classList.remove('hidden');
+                            return;
+                        }
+
+                        errorContainer.classList.add('hidden');
+                        let newRem = currentRem - payAmt;
+                        if (newRem <= 0) {
+                            newRem = 0;
+                            state.debts[index].settled = true;
+                        }
+                        state.debts[index].remaining = newRem;
+
+                        const isLentDirection = state.debts[index].type === 'lent';
+
+                        state.transactions.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                            type: isLentDirection ? 'income' : 'expense',
+                            date: payDate,
+                            amount: payAmt,
+                            category: isLentDirection ? 'Received' : 'Paid',
+                            isIOU: true,
+                            description: isLentDirection ? `IOU Payback from ${state.debts[index].person}` : `Repaid back debt to ${state.debts[index].person}`
+                        });
+
+                        document.getElementById('settle-interactive-modal').classList.add('hidden');
+                        saveState();
+                    }
+                });
+
+                document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+                    state.theme = (state.theme === 'dark') ? 'light' : 'dark';
+                    initTheme();
+                    localStorage.setItem('coinflow_student_state', JSON.stringify(state));
+                });
+
+                // Forgot Password Modal Handlers
+                document.getElementById('forgot-password-form')?.addEventListener('submit', handleForgotPassword);
+                document.getElementById('close-forgot-modal')?.addEventListener('click', () => {
+                    document.getElementById('forgot-password-modal').classList.add('hidden');
+                });
+
+                // Profile Settings Handlers
+                document.getElementById('page-btn-change-password')?.addEventListener('click', showChangePasswordModal);
+
+                // Dashboard Filter Handlers
+                document.getElementById('filter-type')?.addEventListener('change', applyDashboardFilters);
+                document.getElementById('filter-category')?.addEventListener('change', applyDashboardFilters);
+                document.getElementById('filter-month')?.addEventListener('change', applyDashboardFilters);
+
+                // Password Visibility Toggle Handlers
+                const passwordToggles = document.querySelectorAll('.toggle-password-btn');
+                passwordToggles.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const wrapper = btn.closest('.password-input-wrapper');
+                        const input = wrapper.querySelector('input[type="password"], input[type="text"]');
+                        const eyeIcon = btn.querySelector('.eye-icon');
+                        const eyeOffIcon = btn.querySelector('.eye-off-icon');
+                        
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            eyeIcon.classList.add('hidden');
+                            eyeOffIcon.classList.remove('hidden');
+                            btn.style.color = '#fbbf24';
+                        } else {
+                            input.type = 'password';
+                            eyeIcon.classList.remove('hidden');
+                            eyeOffIcon.classList.add('hidden');
+                            btn.style.color = '#888';
+                        }
+                    });
+                });
+            }
+
+            async function initAuth() {
+                if (!supabaseClient) {
+                    showSignedOutView();
+                    return false;
+                }
+
+                try {
+                    // Await session restoration before proceeding
+                    const session = await restoreSupabaseSession();
+                    if (session?.user) {
+                        await showSignedInView(session.user);
+                        return true;
+                    } else {
+                        showSignedOutView();
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Auth initialization error:', error);
+                    showSignedOutView();
+                    return false;
+                }
+            }
+
+            async function startApp() {
+                loadState();
+                initTheme();
+                setupTabs();
+                setupModalHandlers();
+
+                // Check auth BEFORE rendering app UI
+                const isAuthenticated = await initAuth();
+
+                // Render app state
+                renderApp();
+
+                // Setup auth state listener for subsequent changes
+                setupAuthStateListener();
+            }
+
+            function setupAuthStateListener() {
+                supabaseClient?.auth.onAuthStateChange(async (event, session) => {
+                    if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+                        showSignedOutView();
+                        return;
+                    }
+
+                    if (event === 'INITIAL_SESSION') {
+                        if (session?.user) {
+                            await showSignedInView(session.user);
+                        } else {
+                            showSignedOutView();
+                        }
+                        return;
+                    }
+
+                    if (session?.user) {
+                        await showSignedInView(session.user);
+                    } else {
+                        showSignedOutView();
+                    }
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener("DOMContentLoaded", startApp);
+            } else {
+                startApp();
+            }
+        })();
     </script>
 </body>
 </html>
