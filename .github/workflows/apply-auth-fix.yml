@@ -1,0 +1,105 @@
+name: Apply auth persistence fix
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch persistent auth recovery
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+
+          if 'async function recoverAuthSession()' not in text:
+              marker = '        async function initAuth() {'
+              recovery = r'''        async function recoverAuthSession() {
+            if (!supabaseClient) return null;
+
+            // First use Supabase's persisted session. This is the normal path on reload.
+            try {
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (!error && data?.session?.user) {
+                    return data.session;
+                }
+            } catch (error) {
+                console.warn('Initial auth session read failed:', error);
+            }
+
+            // If the access token expired while the page was closed/suspended, explicitly
+            // refresh it instead of treating the user as signed out.
+            try {
+                const { data, error } = await supabaseClient.auth.refreshSession();
+                if (!error && data?.session?.user) {
+                    return data.session;
+                }
+            } catch (error) {
+                console.warn('Auth refresh failed:', error);
+            }
+
+            // Recover sessions written by older CoinFlow builds or under Supabase's
+            // default sb-* storage key, then let Supabase persist the refreshed session.
+            try {
+                const restored = await restoreSupabaseSession();
+                if (restored?.user) {
+                    const { data } = await supabaseClient.auth.getSession();
+                    return data?.session?.user ? data.session : restored;
+                }
+            } catch (error) {
+                console.warn('Legacy auth recovery failed:', error);
+            }
+
+            return null;
+        }
+
+'''
+              if marker not in text:
+                  raise SystemExit('initAuth marker not found')
+              text = text.replace(marker, recovery + marker, 1)
+
+          pattern = re.compile(
+              r'        async function initAuth\(\) \{.*?\n            \}\n\n            async function startApp\(\)',
+              re.S,
+          )
+          replacement = '''        async function initAuth() {
+                if (!supabaseClient) {
+                    showSignedOutView();
+                    return false;
+                }
+
+                try {
+                    // Recover/refresh the persisted Supabase session before deciding that
+                    // the user needs to sign in again.
+                    const session = await recoverAuthSession();
+                    if (session?.user) {
+                        await showSignedInView(session.user);
+                        return true;
+                    }
+
+                    showSignedOutView();
+                    return false;
+                } catch (error) {
+                    console.error('Auth initialization error:', error);
+                    showSignedOutView();
+                    return false;
+                }
+            }
+
+            async function startApp()'''
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit('initAuth block not found')
+
+          path.write_text(text, encoding='utf-8')
