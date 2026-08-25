@@ -1,0 +1,48 @@
+name: Harden CoinFlow frontend event bindings
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make ID-based event bindings null-safe
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+
+          marker = 'COINFLOW_NULL_SAFE_EVENTS_V1'
+          if marker not in text:
+              pattern = re.compile(r"document\\.getElementById\\((['\"][^'\"]+['\"])\\)\\.addEventListener\\(")
+              text, count = pattern.subn(r"document.getElementById(\1)?.addEventListener(", text)
+              print(f'Patched {count} ID-based event bindings')
+
+              marker_script = "\n<!-- COINFLOW_NULL_SAFE_EVENTS_V1 -->\n"
+              if '</head>' in text:
+                  text = text.replace('</head>', marker_script + '</head>', 1)
+              else:
+                  raise SystemExit('Could not find </head>')
+
+              path.write_text(text, encoding='utf-8')
+
+      - name: Commit and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/harden-frontend-events.yml
+          git commit -m "fix: make frontend event bindings resilient"
+          git push
