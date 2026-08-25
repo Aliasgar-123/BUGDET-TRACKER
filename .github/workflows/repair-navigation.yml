@@ -1,0 +1,67 @@
+name: Repair CoinFlow navigation runtime
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch initTheme safely
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = '''            function initTheme() {
+                const sunBtn = document.getElementById('theme-sun');
+                const moonBtn = document.getElementById('theme-moon');
+                if (state.theme === 'dark') {
+                    document.documentElement.className = 'dark';
+                    sunBtn.classList.remove('hidden');
+                    moonBtn.classList.add('hidden');
+                } else {
+                    document.documentElement.className = 'light';
+                    moonBtn.classList.remove('hidden');
+                    sunBtn.classList.add('hidden');
+                }
+            }'''
+          new = '''            function initTheme() {
+                const sunBtn = document.getElementById('theme-sun');
+                const moonBtn = document.getElementById('theme-moon');
+                const root = document.documentElement;
+                if (state.theme === 'dark') {
+                    root.className = 'dark';
+                    sunBtn?.classList.remove('hidden');
+                    moonBtn?.classList.add('hidden');
+                } else {
+                    root.className = 'light';
+                    moonBtn?.classList.remove('hidden');
+                    sunBtn?.classList.add('hidden');
+                }
+            }'''
+          if old not in s:
+              raise SystemExit('Expected initTheme block not found; refusing unsafe edit')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Commit repair and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/repair-navigation.yml
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix: prevent theme UI crash from blocking navigation"
+          git push
