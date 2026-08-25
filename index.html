@@ -218,6 +218,8 @@
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- COINFLOW_NULL_SAFE_EVENTS_V1 -->
 </head>
 <body class="min-h-screen flex flex-col antialiased">
     <div class="bg-glow-layer"></div>
@@ -1362,9 +1364,9 @@
                     settingsWorkspace.classList.remove('hidden');
                 };
 
-                document.getElementById('settings-page-trigger').addEventListener('click', switchToSettingsView);
-                document.getElementById('settings-back-to-home').addEventListener('click', switchToHomeView);
-                document.getElementById('logo-home-trigger').addEventListener('click', switchToHomeView);
+                document.getElementById('settings-page-trigger')?.addEventListener('click', switchToSettingsView);
+                document.getElementById('settings-back-to-home')?.addEventListener('click', switchToHomeView);
+                document.getElementById('logo-home-trigger')?.addEventListener('click', switchToHomeView);
 
                 const executeResetAction = () => {
                     if(confirm("Are you sure you want to wipe clean all logged transaction rows, dynamic targets, and IOUs back to clean baseline parameters?")) {
@@ -1376,16 +1378,16 @@
                     }
                 };
 
-                document.getElementById('page-btn-reset-data').addEventListener('click', executeResetAction);
+                document.getElementById('page-btn-reset-data')?.addEventListener('click', executeResetAction);
 
-                document.getElementById('modal-tab-add').addEventListener('click', function() {
+                document.getElementById('modal-tab-add')?.addEventListener('click', function() {
                     this.className = "text-lg font-bold text-amber-400 border-b-2 border-amber-400 pb-1";
                     document.getElementById('modal-tab-config').className = "text-lg font-medium text-muted pb-1 hover:text-amber-300";
                     document.getElementById('modal-view-add').classList.replace('hidden', 'block');
                     document.getElementById('modal-view-config').classList.replace('block', 'hidden');
                 });
 
-                document.getElementById('modal-tab-config').addEventListener('click', function() {
+                document.getElementById('modal-tab-config')?.addEventListener('click', function() {
                     this.className = "text-lg font-bold text-amber-400 border-b-2 border-amber-400 pb-1";
                     document.getElementById('modal-tab-add').className = "text-lg font-medium text-muted pb-1 hover:text-amber-300";
                     document.getElementById('modal-view-config').classList.replace('hidden', 'block');
@@ -1393,12 +1395,12 @@
                     renderConfigCategoriesList();
                 });
 
-                document.getElementById('quick-add-btn').addEventListener('click', () => {
+                document.getElementById('quick-add-btn')?.addEventListener('click', () => {
                     document.getElementById('tx-date').valueAsDate = new Date();
                     refreshSelectCategories();
                     document.getElementById('transaction-modal').classList.remove('hidden');
                 });
-                document.getElementById('lending-modal-trigger-btn').addEventListener('click', () => {
+                document.getElementById('lending-modal-trigger-btn')?.addEventListener('click', () => {
                     document.getElementById('lending-date').valueAsDate = new Date();
                     document.getElementById('lending-modal').classList.remove('hidden');
                 });
@@ -1409,7 +1411,7 @@
                     });
                 });
 
-                document.getElementById('category-config-form').addEventListener('submit', function(e) {
+                document.getElementById('category-config-form')?.addEventListener('submit', function(e) {
                     e.preventDefault();
                     const typeScope = document.getElementById('cfg-target-type').value;
                     const labelInput = document.getElementById('cfg-new-label').value.trim();
@@ -1423,7 +1425,7 @@
                     }
                 });
 
-                document.getElementById('cfg-existing-list').addEventListener('click', function(e) {
+                document.getElementById('cfg-existing-list')?.addEventListener('click', function(e) {
                     if (e.target.classList.contains('delete-category-label-btn')) {
                         const targetType = e.target.getAttribute('data-type');
                         const targetLabel = e.target.getAttribute('data-label');
@@ -1435,7 +1437,7 @@
                     }
                 });
 
-                document.getElementById('transaction-form').addEventListener('submit', function(e) {
+                document.getElementById('transaction-form')?.addEventListener('submit', function(e) {
                     e.preventDefault();
                     const newTx = {
                         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
@@ -1452,7 +1454,7 @@
                     saveState();
                 });
 
-                document.getElementById('lending-form').addEventListener('submit', function(e) {
+                document.getElementById('lending-form')?.addEventListener('submit', function(e) {
                     e.preventDefault();
                     const initialAmt = parseFloat(document.getElementById('lending-amount').value);
                     const isLent = document.getElementById('lending-type').value === 'lent';
@@ -1483,7 +1485,7 @@
                 });
 
                 if(document.getElementById('transaction-table-rows')){
-                    document.getElementById('transaction-table-rows').addEventListener('click', function(e) {
+                    document.getElementById('transaction-table-rows')?.addEventListener('click', function(e) {
                         if(e.target.classList.contains('delete-tx-btn')) {
                             const targetId = e.target.getAttribute('data-id');
                             state.transactions = state.transactions.filter(t => t.id !== targetId);
@@ -1492,13 +1494,13 @@
                     });
                 }
 
-                document.getElementById('type-btn-expense').addEventListener('click', function() {
+                document.getElementById('type-btn-expense')?.addEventListener('click', function() {
                     this.className = "py-2 text-sm font-bold rounded-lg text-rose-400 bg-rose-500/10 border border-rose-500/20";
                     document.getElementById('type-btn-income').className = "py-2 text-sm font-bold rounded-lg text-slate-400";
                     document.getElementById('tx-type').value = "expense";
                     refreshSelectCategories();
                 });
-                document.getElementById('type-btn-income').addEventListener('click', function() {
+                document.getElementById('type-btn-income')?.addEventListener('click', function() {
                     this.className = "py-2 text-sm font-bold rounded-lg text-emerald-400 bg-emerald-500/10 border border-emerald-500/20";
                     document.getElementById('type-btn-expense').className = "py-2 text-sm font-bold rounded-lg text-slate-400";
                     document.getElementById('tx-type').value = "income";
@@ -1522,14 +1524,14 @@
                     document.getElementById('settle-interactive-modal').classList.remove('hidden');
                 };
 
-                if(document.getElementById('lent-list-container')) document.getElementById('lent-list-container').addEventListener('click', handleOpenSettleWorkflow);
-                if(document.getElementById('borrowed-list-container')) document.getElementById('borrowed-list-container').addEventListener('click', handleOpenSettleWorkflow);
+                if(document.getElementById('lent-list-container')) document.getElementById('lent-list-container')?.addEventListener('click', handleOpenSettleWorkflow);
+                if(document.getElementById('borrowed-list-container')) document.getElementById('borrowed-list-container')?.addEventListener('click', handleOpenSettleWorkflow);
 
-                document.getElementById('close-settle-modal').addEventListener('click', () => {
+                document.getElementById('close-settle-modal')?.addEventListener('click', () => {
                     document.getElementById('settle-interactive-modal').classList.add('hidden');
                 });
 
-                document.getElementById('settle-interactive-form').addEventListener('submit', function(e) {
+                document.getElementById('settle-interactive-form')?.addEventListener('submit', function(e) {
                     e.preventDefault();
                     const targetId = document.getElementById('settle-debt-id').value;
                     const payAmt = parseFloat(document.getElementById('settle-amount').value);
@@ -1571,7 +1573,7 @@
                     }
                 });
 
-                document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+                document.getElementById('theme-toggle-btn')?.addEventListener('click', () => {
                     state.theme = (state.theme === 'dark') ? 'light' : 'dark';
                     initTheme();
                     localStorage.setItem('coinflow_student_state', JSON.stringify(state));
