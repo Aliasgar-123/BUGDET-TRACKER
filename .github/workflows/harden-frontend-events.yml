@@ -19,23 +19,26 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import re
 
           path = Path('index.html')
-          text = path.read_text(encoding='utf-8')
-
+          lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
           marker = 'COINFLOW_NULL_SAFE_EVENTS_V1'
-          if marker not in text:
-              pattern = re.compile(r"document\\.getElementById\\((['\"][^'\"]+['\"])\\)\\.addEventListener\\(")
-              text, count = pattern.subn(r"document.getElementById(\1)?.addEventListener(", text)
-              print(f'Patched {count} ID-based event bindings')
 
+          if marker not in ''.join(lines):
+              patched = 0
+              output = []
+              for line in lines:
+                  if 'document.getElementById(' in line and ').addEventListener(' in line:
+                      line = line.replace(').addEventListener(', ')?.addEventListener(')
+                      patched += 1
+                  output.append(line)
+
+              print(f'Patched {patched} ID-based event bindings')
+              text = ''.join(output)
               marker_script = "\n<!-- COINFLOW_NULL_SAFE_EVENTS_V1 -->\n"
-              if '</head>' in text:
-                  text = text.replace('</head>', marker_script + '</head>', 1)
-              else:
+              if '</head>' not in text:
                   raise SystemExit('Could not find </head>')
-
+              text = text.replace('</head>', marker_script + '</head>', 1)
               path.write_text(text, encoding='utf-8')
 
       - name: Commit and remove temporary workflow
