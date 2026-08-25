@@ -1,0 +1,39 @@
+name: Add resilient CoinFlow navigation
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add delegated navigation fallback
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          marker = '/* COINFLOW_RESILIENT_NAVIGATION_V1 */'
+          if marker not in text:
+              shim = r'''\n<script>\n/* COINFLOW_RESILIENT_NAVIGATION_V1 */\n(function () {\n  const routes = new Set(['/dashboard', '/lending-hub', '/statistics', '/categories']);\n\n  function showRoute(route, push) {\n    if (!routes.has(route)) route = '/dashboard';\n    document.querySelectorAll('.route-page').forEach(function (page) {\n      page.classList.add('hidden');\n    });\n    const target = document.getElementById('route-' + route.slice(1));\n    if (target) target.classList.remove('hidden');\n\n    document.querySelectorAll('.side-nav-item[data-route]').forEach(function (item) {\n      item.classList.toggle('active', item.getAttribute('data-route') === route);\n    });\n\n    if (push && window.location.pathname !== route) {\n      window.history.pushState({ coinflowRoute: route }, '', route);\n    }\n\n    const sidebar = document.getElementById('app-sidebar');\n    const overlay = document.getElementById('sidebar-overlay');\n    if (sidebar) sidebar.classList.remove('open');\n    if (overlay) overlay.classList.add('hidden');\n  }\n\n  function boot() {\n    document.addEventListener('click', function (event) {\n      const item = event.target.closest('[data-route]');\n      if (!item) return;\n      const route = item.getAttribute('data-route');\n      if (!routes.has(route)) return;\n      event.preventDefault();\n      event.stopPropagation();\n      showRoute(route, true);\n    }, true);\n\n    window.addEventListener('popstate', function () {\n      showRoute(window.location.pathname, false);\n    });\n\n    showRoute(window.location.pathname, false);\n  }\n\n  if (document.readyState === 'loading') {\n    document.addEventListener('DOMContentLoaded', boot, { once: true });\n  } else {\n    boot();\n  }\n})();\n</script>\n'''
+              if '</body>' not in text:
+                  raise SystemExit('body closing tag not found')
+              text = text.replace('</body>', shim + '</body>', 1)
+              path.write_text(text, encoding='utf-8')
+
+      - name: Commit and remove patch workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/navigation-delegation.yml
+          git commit -m "fix: add resilient delegated frontend navigation"
+          git push
