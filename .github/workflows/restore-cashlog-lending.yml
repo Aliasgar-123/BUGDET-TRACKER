@@ -15,42 +15,110 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Patch index.html
-        shell: python
+      - name: Restore original working modals and add lending toggle
+        shell: bash
         run: |
+          python3 - <<'PY'
           from pathlib import Path
-          import base64
+          import subprocess
 
           path = Path('index.html')
           text = path.read_text(encoding='utf-8')
-          marker = 'COINFLOW_CASHLOG_LENDING_RESTORE_V2'
+          marker = 'COINFLOW_CASHLOG_LENDING_RESTORE_V3'
 
           if marker not in text:
-              modal_html = base64.b64decode('PCEtLSBDT0lORkxPV19DQVNITE9HX0xFTkRJTkdfUkVTVE9SRV9WMiAtLT4KPCEtLSBRdWljayBBZGQgVHJhbnNhY3Rpb24gTW9kYWwgcmVzdG9yZWQgZnJvbSBwcmV2aW91cyB3b3JraW5nIENhc2ggTG9nIC0tPgo8ZGl2IGlkPSJ0cmFuc2FjdGlvbi1tb2RhbCIgY2xhc3M9ImZpeGVkIGluc2V0LTAgei01MCBmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciBwLTQgYmctc2xhdGUtOTUwLzgwIGJhY2tkcm9wLWJsdXItc20gaGlkZGVuIj48ZGl2IGNsYXNzPSJ3LWZ1bGwgbWF4LXctbWQgcm91bmRlZC0yeGwgYm9yZGVyIHAtNiBiZy1zbGF0ZS05MDAgYm9yZGVyLWFtYmVyLTUwMC80MCBzaGFkb3ctWzBfMF8zMHB4X3JnYmEoMjQ1LDE1OCwxMSwwLjIpXSI+PGRpdiBjbGFzcz0iZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1iZXR3ZWVuIGJvcmRlci1iIGJvcmRlci1zbGF0ZS04MDAgcGItMyBtYi00Ij48ZGl2IGNsYXNzPSJmbGV4IHNwYWNlLXgtNCI+PGJ1dHRvbiB0eXBlPSJidXR0b24iIGlkPSJtb2RhbC10YWItYWRkIiBjbGFzcz0idGV4dC1sZyBmb250LWJvbGQgdGV4dC1hbWJlci00MDAgYm9yZGVyLWItMiBib3JkZXItYW1iZXItNDAwIHBiLTEiPkFkZCBSZWNvcmQ8L2J1dHRvbj48YnV0dG9uIHR5cGU9ImJ1dHRvbiIgaWQ9Im1vZGFsLXRhYi1jb25maWciIGNsYXNzPSJ0ZXh0LWxnIGZvbnQtbWVkaXVtIHRleHQtbXV0ZWQgcGItMSBob3Zlcjp0ZXh0LWFtYmVyLTMwMCI+Q3VzdG9tIENhdGVnb3JpZXM8L2J1dHRvbj48L2Rpdj48YnV0dG9uIHR5cGU9ImJ1dHRvbiIgY2xhc3M9Im1vZGFsLWNsb3NlLWJ0biB0ZXh0LW11dGVkIGhvdmVyOnRleHQtd2hpdGUiIGRhdGEtbW9kYWw9InRyYW5zYWN0aW9uLW1vZGFsIj7inJU8L2J1dHRvbj48L2Rpdj48ZGl2IGlkPSJtb2RhbC12aWV3LWFkZCIgY2xhc3M9ImJsb2NrIHNwYWNlLXktNCI+PGZvcm0gaWQ9InRyYW5zYWN0aW9uLWZvcm0iIGNsYXNzPSJzcGFjZS15LTQiPjxkaXY+PGxhYmVsIGNsYXNzPSJibG9jayB0ZXh0LXhzIGZvbnQtYm9sZCB1cHBlcmNhc2UgdHJhY2tpbmctd2lkZXIgdGV4dC1tdXRlZCBtYi0yIj5UeXBlPC9sYWJlbD48ZGl2IGNsYXNzPSJncmlkIGdyaWQtY29scy0yIGdhcC0yIHAtMSByb3VuZGVkLXhsIGJnLXNsYXRlLTk1MCBib3JkZXIgYm9yZGVyLXNsYXRlLTgwMCI+PGJ1dHRvbiB0eXBlPSJidXR0b24iIGlkPSJ0eXBlLWJ0bi1leHBlbnNlIiBjbGFzcz0icHktMiB0ZXh0LXNtIGZvbnQtYm9sZCByb3VuZGVkLWxnIHRleHQtcm9zZS00MDAgYmctcm9zZS01MDAvMTAgYm9yZGVyIGJvcmRlci1yb3NlLTUwMC8yMCI+RXhwZW5zZTwvYnV0dG9uPjxidXR0b24gdHlwZT0iYnV0dG9uIiBpZD0idHlwZS1idG4taW5jb21lIiBjbGFzcz0icHktMiB0ZXh0LXNtIGZvbnQtYm9sZCByb3VuZGVkLWxnIHRleHQtc2xhdGUtNDAwIj5JbmNvbWU8L2J1dHRvbj48L2Rpdj48aW5wdXQgdHlwZT0iaGlkZGVuIiBpZD0idHh0eXBlIiB2YWx1ZT0iZXhwZW5zZSI+PC9kaXY+PGRpdj48bGFiZWwgY2xhc3M9ImJsb2NrIHRleHQteHMgZm9udC1ib2xkIHVwcGVyY2FzZSB0cmFja2luZy13aWRlciB0ZXh0LW11dGVkIG1iLTEiPkRhdGU8L2xhYmVsPjxpbnB1dCB0eXBlPSJkYXRlIiBpZD0idHgtZGF0ZSIgcmVxdWlyZWQgY2xhc3M9InctZnVsbCBweC0zIHB5LTIgcm91bmRlZC14bCBib3JkZXIgYmctc2xhdGUtOTUwIGJvcmRlci1zbGF0ZS04MDAgdGV4dC1zbSB0ZXh0LXNsYXRlLTEwMCI+PC9kaXY+PGRpdj48bGFiZWwgY2xhc3M9ImJsb2NrIHRleHQteHMgZm9udC1ib2xkIHVwcGVyY2FzZSB0cmFja2luZy13aWRlciB0ZXh0LW11dGVkIG1iLTEiPkFtb3VudCAoJCk8L2xhYmVsPjxpbnB1dCB0eXBlPSJudW1iZXIiIGlkPSJ0eC1hbW91bnQiIG1pbj0iMC4wMSIgc3RlcD0iMC4wMSIgcmVxdWlyZWQgY2xhc3M9InctZnVsbCBweC0zIHB5LTIgcm91bmRlZC14bCBib3JkZXIgYmctc2xhdGUtOTUwIGJvcmRlci1zbGF0ZS04MDAgdGV4dC1zbSBmb250LXNlbWlib2xkIHRleHQtc2xhdGUtMTAwIj48L2Rpdj48ZGl2PjxsYWJlbCBjbGFzcz0iYmxvY2sgdGV4dC14cyBmb250LWJvbGQgdXBwZXJjYXNlIHRyYWNraW5nLXdpZGVyIHRleHQtbXV0ZWQgbWItMSI+Q2F0ZWdvcnk8L2xhYmVsPjxzZWxlY3QgaWQ9InR4LWNhdGVnb3J5IiByZXF1aXJlZCBjbGFzcz0idy1mdWxsIHB4LTMgcHktMiByb3VuZGVkLXhsIGJvcmRlciBiZy1zbGF0ZS05NTAgYm9yZGVyLXNsYXRlLTgwMCB0ZXh0LXNsYXRlLTEwMCI+PC9zZWxlY3Q+PC9kaXY+PGRpdj48bGFiZWwgY2xhc3M9ImJsb2NrIHRleHQteHMgZm9udC1ib2xkIHVwcGVyY2FzZSB0cmFja2luZy13aWRlciB0ZXh0LW11dGVkIG1iLTEiPkRlc2NyaXB0aW9uPC9sYWJlbD48aW5wdXQgdHlwZT0idGV4dCIgcGxhY2Vob2xkZXI9ImUuZy4sIFBpenphIE5pZ2h0IFBhcnR5IiBpZD0idHgtZGVzY3JpcHRpb24iIHJlcXVpcmVkIGNsYXNzPSJ3LWZ1bGwgcHgtMyBweS0yIHJvdW5kZWQteGwgYm9yZGVyIGJnLXNsYXRlLTk1MCBib3JkZXItc2xhdGUtODAwIHRleHQtc20gdGV4dC1zbGF0ZS0xMDAiPjwvZGl2PjxkaXYgY2xhc3M9ImZsZXgganVzdGlmeS1lbmQgc3BhY2UteC0zIHB0LTIiPjxidXR0b24gdHlwZT0iYnV0dG9uIiBjbGFzcz0ibW9kYWwtY2xvc2UtYnRuIHB4LTQgcHktMiB0ZXh0LXNtIGZvbnQtbWVkaXVtIHRleHQtbXV0ZWQgaG92ZXI6dGV4dC1zbGF0ZS0yMDAiIGRhdGEtbW9kYWw9InRyYW5zYWN0aW9uLW1vZGFsIj5DYW5jZWw8L2J1dHRvbj48YnV0dG9uIHR5cGU9InN1Ym1pdCIgY2xhc3M9InB4LTUgcHktMiByb3VuZGVkLWxnIGJnLWFtYmVyLTUwMCBob3ZlcjpiZy1hbWJlci00MDAgdGV4dC1zbGF0ZS05NTAgdGV4dC1zbSBmb250LWJvbGQiPkNvbW1pdDwvYnV0dG9uPjwvZGl2PjwvZm9ybT48L2Rpdj48ZGl2IGlkPSJtb2RhbC12aWV3LWNvbmZpZyIgY2xhc3M9ImhpZGRlbiBzcGFjZS15LTQiPjxmb3JtIGlkPSJjYXRlZ29yeS1jb25maWctZm9ybSIgY2xhc3M9InNwYWNlLXktNCI+PGRpdj48bGFiZWwgY2xhc3M9ImJsb2NrIHRleHQteHMgZm9udC1ib2xkIHVwcGVyY2FzZSB0cmFja2luZy13aWRlciB0ZXh0LW11dGVkIG1iLTEiPkRlc3RpbmF0aW9uIFRhcmdldCBTY29wZTwvbGFiZWw+PHNlbGVjdCBpZD0iY2ZnLXRhcmdldC10eXBlIiBjbGFzcz0idy1mdWxsIHB4LTMgcHktMiByb3VuZGVkLXhsIGJvcmRlciBiZy1zbGF0ZS05NTAgYm9yZGVyLXNsYXRlLTgwMCB0ZXh0LXNsYXRlLTEwMCI+PG9wdGlvbiB2YWx1ZT0iZXhwZW5zZSI+RXhwZW5zZSBDYXRlZ29yaWVzIEJ1Y2tldDwvb3B0aW9uPjxvcHRpb24gdmFsdWU9ImluY29tZSI+SW5jb21lIENhdGVnb3JpZXMgQnVja2V0PC9vcHRpb24+PC9zZWxlY3Q+PC9kaXY+PGRpdj48bGFiZWwgY2xhc3M9ImJsb2NrIHRleHQteHMgZm9udC1ib2xkIHVwcGVyY2FzZSB0cmFja2luZy13aWRlciB0ZXh0LW11dGVkIG1iLTEiPk5ldyBDYXRlZ29yeSBMYWJlbDwvbGFiZWw+PGlucHV0IHR5cGU9InRleHQiIGlkPSJjZmc tbmV3LWxhYmVsIiBwbGFjZWhvbGRlcj0iZS5nLiwgTGFiIEdyYW50cywgQ29mZmVlIENyYXZpbmdzIiByZXF1aXJlZCBjbGFzcz0idy1mdWxsIHB4LTMgcHktMiByb3VuZGVkLXhsIGJvcmRlciBiZy1zbGF0ZS05NTAgYm9yZGVyLXNsYXRlLTgwMCB0ZXh0LXNtIHRleHQtc2xhdGUtMTAwIj48L2Rpdj48YnV0dG9uIHR5cGU9InN1Ym1pdCIgY2xhc3M9InctZnVsbCBweS0yIHJvdW5kZWQtbGcgYmctaW5kaWdvLTYwMCBob3ZlcjpiZy1pbmRpZ28tNTAwIHRleHQtd2hpdGUgZm9udC1ib2xkIHRleHQtc20iPkNyZWF0ZSBTZWdtZW50IENhdGVnb3J5PC9idXR0b24+PC9mb3JtPjxkaXYgY2xhc3M9ImJvcmRlci10IGJvcmRlci1zbGF0ZS04MDAgcHQtMyI+PGg0IGNsYXNzPSJ0ZXh0LXhzIGZvbnQtYm9sZCB1cHBlcmNhc2UgdHJhY2tpbmctd2lkZXIgdGV4dC1tdXRlZCBtYi0yIj5FeGlzdGluZyBXb3Jrc3BhY2UgTGFiZWxzPC9oND48ZGl2IGlkPSJjZmcraW1hc2BleGlzdGluZy1saXN0IiBjbGFzcz0ibWF4LWgtMzIgb3ZlcmZsb3cteS1hdXRvIHNwYWNlLXktMS41IGN1c3RvbS1zY3JvbGxiYXIgdGV4dC14cyI+PC9kaXY+PC9kaXY+PC9kaXY+PC9kaXY+PC9kaXY+','base64').decode()
-              toggle_html = base64.b64decode('PGRpdiBpZD0ibGVuZGluZy12aWV3LXRvZ2dsZSIgY2xhc3M9ImZsZXggZmxleC13cmFwIGdhcC0yIG1iLTUiPjxidXR0b24gdHlwZT0iYnV0dG9uIiBpZD0ibGVuZGluZy12aWV3LWxlbnQiIGNsYXNzPSJweC00IHB5LTIuNSByb3VuZGVkLXhsIGJnLWFtYmVyLTUwMCB0ZXh0LXNsYXRlLTk1MCBmb250LWV4dHJhYm9sZCB0ZXh0LXNtIGJvcmRlciBib3JkZXItYW1iZXItNDAwIj5MZW5kaW5nPC9idXR0b24+PGJ1dHRvbiB0eXBlPSJidXR0b24iIGlkPSJsZW5kaW5nLXZpZXctYm9ycm93ZWQiIGNsYXNzPSJweC00IHB5LTIuNSByb3VuZGVkLXhsIGJnLXNsYXRlLTkwMCB0ZXh0LXNsYXRlLTMwMCBmb250LWV4dHJhYm9sZCB0ZXh0LXNtIGJvcmRlciBib3JkZXItc2xhdGUtNzAwIj5Cb3Jyb3dpbmc8L2J1dHRvbj48L2Rpdj4=','base64').decode()
-              helper_script = base64.b64decode('PHNjcmlwdD4vKiBDT0lORkxPV19DQVNITE9HX0xFTkRJTkdfUkVTVE9SRV9WMiAqLyhmdW5jdGlvbigpe2Z1bmN0aW9uIG9wZW5Nb2RhbChpZCl7dmFyIGU9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoaWQpO2lmKGUpZS5jbGFzc0xpc3QucmVtb3ZlKCdoaWRkZW4nKX1mdW5jdGlvbiBzZXRWaWV3KHYpe3ZhciBsPWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdsZW50LWxpc3QtY29udGFpbmVyJyksYj1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYm9ycm93ZWQtbGlzdC1jb250YWluZXInKSxsYz1sJiZsLmNsb3Nlc3QoJy5pbnRlcmFjdGl2ZS1jYXJkJyksYmM9YiYmYi5jbG9zZXN0KCcuaW50ZXJhY3RpdmUtY2FyZCcpLGxiPWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdsZW5kaW5nLXZpZXctbGVudCcpLGJiPWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdsZW5kaW5nLXZpZXctYm9ycm93ZWQnKTtpZih2PT09J2xlbnQnKXtpZihsYylsYy5jbGFzc0xpc3QucmVtb3ZlKCdoaWRkZW4nKTtpZihiYyliYy5jbGFzc0xpc3QuYWRkKCdoaWRkZW4nKTtpZihsYilsYi5jbGFzc05hbWU9J3B4LTQgcHktMi41IHJvdW5kZWQteGwgYmctYW1iZXItNTAwIHRleHQtc2xhdGUtOTUwIGZvbnQtZXh0cmFib2QgdGV4dC1zbSBib3JkZXIgYm9yZGVyLWJvcmRlci1hbWJlci00MDAnO2lmKGJiKWJiLmNsYXNzTmFtZT0ncHgtNCBweS0yLjUgcm91bmRlZC14bCBiZy1zbGF0ZS05MDAgdGV4dC1zbGF0ZS0zMDAgZm9udC1leHRyYWJvbGQgdGV4dC1zbSBib3JkZXIgYm9yZGVyLXNsYXRlLTcwMCd9ZWxzZXtpZihsYylsYy5jbGFzc0xpc3QuYWRkKCdoaWRkZW4nKTtpZihiYyliYy5jbGFzc0xpc3QucmVtb3ZlKCdoaWRkZW4nKTtpZihsYilsYi5jbGFzc05hbWU9J3B4LTQgcHktMi41IHJvdW5kZWQteGwgYmctc2xhdGUtOTAwIHRleHQtc2xhdGUtMzAwIGZvbnQtZXh0cmFib2QgdGV4dC1zbSBib3JkZXIgYm9yZGVyLXNsYXRlLTcwMCc7aWYoYmIpYmIuY2xhc3NOYW1lPSdweC00IHB5LTIuNSByb3VuZGVkLXhsIGJnLXJvc2UtNTAwIHRleHQtd2hpdGUgZm9udC1leHRyYWJvbGQgdGV4dC1zbSBib3JkZXIgYm9yZGVyLXJvc2UtNDAwJ31mdW5jdGlvbiBib290KCl7dmFyIGQ9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2Rhc2hib2FyZC1hZGQtYnRuJykscT1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgicXVpY2stYWRkLWJ0biIpLHQ9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImxlbmRpbmctbW9kYWwtdHJpZ2dlci1idG4iKTtpZihkJiZxKWQuYWRkRXZlbnRMaXN0ZW5lcigiY2xpY2siLGZ1bmN0aW9uKCl7cS5jbGljaygpfSk7aWYodCl0LmFkZEV2ZW50TGlzdGVuZXIoImNsaWNrIixmdW5jdGlvbigpe29wZW5Nb2RhbCgibGVuZGluZy1tb2RhbCIpO3ZhciB4PWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJsZW5kaW5nLWRhdGUiKTtpZih4KXgudmFsdWVBc0RhdGU9bmV3IERhdGUoKX0pO2RvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoIi5tb2RhbC1jbG9zZS1idG4iKS5mb3JFYWNoKGZ1bmN0aW9uKGIpe2IuYWRkRXZlbnRMaXN0ZW5lcigiY2xpY2siLGZ1bmN0aW9uKCl7dmFyIGlkPWQuZ2V0QXR0cmlidXRlKCJkYXRhLW1vZGFsIiksZT1kb2N1bWVudC5nZXRFbGVtZW50QnlJZChpZCk7aWYoZSlcbiAgICBlLmNsYXNzTGlzdC5hZGQoImhpZGRlbiIpIH0pfSk7dmFyIGw9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImxlbmRpbmctdmlldy1sZW50IiksYj1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgi bGVuZGluZy12aWV3LWJvcnJvd2VkIik7aWYobClgICBsLmFkZEV2ZW50TGlzdGVuZXIoImNsaWNrIixmdW5jdGlvbighKXtzZXRWaWV3KCJsZW50Iil9KTtpZihiKXtiLmFkZEV2ZW50TGlzdGVuZXIoImNsaWNrIixmdW5jdGlvbighKXtzZXRWaWV3KCJib3Jyb3dlZCIpfSl9c2V0Vmlldygi bGVudCIpfWlmKGRvY3VtZW50LnJlYWR5U3RhdGU9PT0ibG9hZGluZyIpcmRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoIkRPTUNvbnRlbnRMb2FkZWQiLGJvb3QseyBvbmNlIjp0cnVlIH0pO2Vsc2UgYm9vdCgpfSkoKTs8L3NjcmlwdD4=','base64').decode()
+              old = subprocess.check_output(
+                  ['git', 'show', '2634f573f45fad2121f01f1c75491aa00d9c2036:index.html'],
+                  text=True,
+                  encoding='utf-8'
+              )
 
-              anchor = '    <footer class="w-full border-t border-slate-900 py-6 text-center text-xs text-muted mt-auto">'
-              if anchor not in text:
-                  raise SystemExit('Footer anchor not found')
-              text = text.replace(anchor, modal_html + '\n\n' + anchor, 1)
+              start = old.find('    <!-- Quick Add Transaction Modal -->')
+              end = old.find('    <footer class=', start)
+              if start == -1 or end == -1:
+                  raise SystemExit('Could not locate original Cash Log / IOU modal block')
 
-              route_anchor = '                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6"><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Total Lent Outstanding</span>'
-              if route_anchor not in text:
-                  raise SystemExit('Lending Hub anchor not found')
-              text = text.replace(route_anchor, toggle_html + '\n' + route_anchor, 1)
+              modal_block = old[start:end]
 
-              text = text.replace('</body>', helper_script + '\n</body>', 1)
+              # Avoid duplicate modal IDs if a future revision already contains them.
+              if 'id="transaction-modal"' not in text:
+                  footer_anchor = '    <footer class='
+                  if footer_anchor not in text:
+                      raise SystemExit('Current footer anchor not found')
+                  text = text.replace(footer_anchor, modal_block + '\n' + footer_anchor, 1)
+
+              toggle_html = '''
+              <div id="lending-view-toggle" class="flex flex-wrap gap-2 mb-5">
+                  <button type="button" id="lending-view-lent" class="px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400 shadow-lg shadow-amber-500/10">Lending</button>
+                  <button type="button" id="lending-view-borrowed" class="px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-rose-400/50">Borrowing</button>
+              </div>'''
+
+              route_anchor = '                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">'
+              if 'id="lending-view-toggle"' not in text:
+                  if route_anchor not in text:
+                      raise SystemExit('Lending Hub summary anchor not found')
+                  text = text.replace(route_anchor, toggle_html + '\n' + route_anchor, 1)
+
+              helper = '''
+<script>
+/* COINFLOW_CASHLOG_LENDING_RESTORE_V3 */
+(function () {
+  function setLendingView(view) {
+    const lent = document.getElementById('lent-list-container');
+    const borrowed = document.getElementById('borrowed-list-container');
+    const lentCard = lent?.closest('.interactive-card');
+    const borrowedCard = borrowed?.closest('.interactive-card');
+    const lentBtn = document.getElementById('lending-view-lent');
+    const borrowedBtn = document.getElementById('lending-view-borrowed');
+
+    if (view === 'lent') {
+      lentCard?.classList.remove('hidden');
+      borrowedCard?.classList.add('hidden');
+      if (lentBtn) lentBtn.className = 'px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400 shadow-lg shadow-amber-500/10';
+      if (borrowedBtn) borrowedBtn.className = 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-rose-400/50';
+    } else {
+      lentCard?.classList.add('hidden');
+      borrowedCard?.classList.remove('hidden');
+      if (lentBtn) lentBtn.className = 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-amber-400/50';
+      if (borrowedBtn) borrowedBtn.className = 'px-4 py-2.5 rounded-xl bg-rose-500 text-white font-extrabold text-sm border border-rose-400 shadow-lg shadow-rose-500/10';
+    }
+  }
+
+  function boot() {
+    const dashboardAdd = document.getElementById('dashboard-add-btn');
+    const quickAdd = document.getElementById('quick-add-btn');
+    dashboardAdd?.addEventListener('click', () => quickAdd?.click());
+
+    document.getElementById('lending-view-lent')?.addEventListener('click', () => setLendingView('lent'));
+    document.getElementById('lending-view-borrowed')?.addEventListener('click', () => setLendingView('borrowed'));
+    setLendingView('lent');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
+'''
+              if marker not in text:
+                  text = text.replace('</body>', helper + '</body>', 1)
+
               path.write_text(text, encoding='utf-8')
-              print('Cash Log and Lending restore applied')
+              print('Original Cash Log / IOU modals restored; Lending and Borrowing controls added')
 
-      - name: Commit patched index and remove workflow
+          PY
+
+      - name: Commit and remove temporary workflow
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git rm .github/workflows/restore-cashlog-lending.yml
-          git commit -m "fix: restore cash log modal and lending controls"
+          git commit -m "fix: restore cash log and lending controls"
           git push
