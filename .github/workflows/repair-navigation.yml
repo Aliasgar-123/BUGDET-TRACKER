@@ -2,66 +2,112 @@ name: Repair CoinFlow navigation runtime
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   repair:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Patch initTheme safely
+      - name: Restore original Cash Log and Lending Hub
+        shell: bash
         run: |
-          python - <<'PY'
+          python3 - <<'PY'
           from pathlib import Path
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-          old = '''            function initTheme() {
-                const sunBtn = document.getElementById('theme-sun');
-                const moonBtn = document.getElementById('theme-moon');
-                if (state.theme === 'dark') {
-                    document.documentElement.className = 'dark';
-                    sunBtn.classList.remove('hidden');
-                    moonBtn.classList.add('hidden');
-                } else {
-                    document.documentElement.className = 'light';
-                    moonBtn.classList.remove('hidden');
-                    sunBtn.classList.add('hidden');
-                }
-            }'''
-          new = '''            function initTheme() {
-                const sunBtn = document.getElementById('theme-sun');
-                const moonBtn = document.getElementById('theme-moon');
-                const root = document.documentElement;
-                if (state.theme === 'dark') {
-                    root.className = 'dark';
-                    sunBtn?.classList.remove('hidden');
-                    moonBtn?.classList.add('hidden');
-                } else {
-                    root.className = 'light';
-                    moonBtn?.classList.remove('hidden');
-                    sunBtn?.classList.add('hidden');
-                }
-            }'''
-          if old not in s:
-              raise SystemExit('Expected initTheme block not found; refusing unsafe edit')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          import subprocess
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          marker = 'COINFLOW_CASHLOG_LENDING_RESTORE_V4'
+
+          if marker not in text:
+              old = subprocess.check_output(
+                  ['git', 'show', '2634f573f45fad2121f01f1c75491aa00d9c2036:index.html'],
+                  text=True,
+                  encoding='utf-8'
+              )
+              start = old.find('    <!-- Quick Add Transaction Modal -->')
+              end = old.find('    <footer class=', start)
+              if start == -1 or end == -1:
+                  raise SystemExit('Original Cash Log / IOU block not found')
+
+              modal_block = old[start:end]
+              if 'id="transaction-modal"' not in text:
+                  anchor = '    <footer class='
+                  if anchor not in text:
+                      raise SystemExit('Current footer anchor not found')
+                  text = text.replace(anchor, modal_block + '\n' + anchor, 1)
+
+              toggle_html = '''
+              <div id="lending-view-toggle" class="flex flex-wrap gap-2 mb-5">
+                  <button type="button" id="lending-view-lent" class="px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400 shadow-lg shadow-amber-500/10">Lending</button>
+                  <button type="button" id="lending-view-borrowed" class="px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-rose-400/50">Borrowing</button>
+              </div>'''
+              route_anchor = '                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">'
+              if 'id="lending-view-toggle"' not in text:
+                  if route_anchor not in text:
+                      raise SystemExit('Lending Hub summary anchor not found')
+                  text = text.replace(route_anchor, toggle_html + '\n' + route_anchor, 1)
+
+              helper = '''
+<script>
+/* COINFLOW_CASHLOG_LENDING_RESTORE_V4 */
+(function () {
+  function setLendingView(view) {
+    const lent = document.getElementById('lent-list-container');
+    const borrowed = document.getElementById('borrowed-list-container');
+    const lentCard = lent?.closest('.interactive-card');
+    const borrowedCard = borrowed?.closest('.interactive-card');
+    const lentBtn = document.getElementById('lending-view-lent');
+    const borrowedBtn = document.getElementById('lending-view-borrowed');
+    if (view === 'lent') {
+      lentCard?.classList.remove('hidden');
+      borrowedCard?.classList.add('hidden');
+      if (lentBtn) lentBtn.className = 'px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400 shadow-lg shadow-amber-500/10';
+      if (borrowedBtn) borrowedBtn.className = 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-rose-400/50';
+    } else {
+      lentCard?.classList.add('hidden');
+      borrowedCard?.classList.remove('hidden');
+      if (lentBtn) lentBtn.className = 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-amber-400/50';
+      if (borrowedBtn) borrowedBtn.className = 'px-4 py-2.5 rounded-xl bg-rose-500 text-white font-extrabold text-sm border border-rose-400 shadow-lg shadow-rose-500/10';
+    }
+  }
+
+  function boot() {
+    document.getElementById('dashboard-add-btn')?.addEventListener('click', () => document.getElementById('quick-add-btn')?.click());
+    document.getElementById('lending-view-lent')?.addEventListener('click', () => setLendingView('lent'));
+    document.getElementById('lending-view-borrowed')?.addEventListener('click', () => setLendingView('borrowed'));
+    setLendingView('lent');
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
+})();
+</script>
+'''
+              text = text.replace('</body>', helper + '</body>', 1)
+              path.write_text(text, encoding='utf-8')
+              print('Restored original Cash Log and IOU modals plus Lending/Borrowing buttons')
           PY
 
       - name: Commit repair and remove temporary workflow
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/repair-navigation.yml
           git add index.html
+          git rm .github/workflows/repair-navigation.yml
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          git commit -m "fix: prevent theme UI crash from blocking navigation"
+          git commit -m "fix: restore cash log and lending hub controls"
           git push
