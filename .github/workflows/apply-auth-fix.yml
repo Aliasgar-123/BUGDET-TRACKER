@@ -1,4 +1,4 @@
-name: Apply auth persistence fix
+name: Apply CoinFlow application repairs
 
 on:
   push:
@@ -13,93 +13,101 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Patch persistent auth recovery
+      - name: Restore working Cash Log and Lending Hub controls
         shell: python
         run: |
           from pathlib import Path
-          import re
+          import subprocess
 
           path = Path('index.html')
           text = path.read_text(encoding='utf-8')
+          marker = 'COINFLOW_CASHLOG_LENDING_COMMIT_V1'
 
-          if 'async function recoverAuthSession()' not in text:
-              marker = '        async function initAuth() {'
-              recovery = r'''        async function recoverAuthSession() {
-            if (!supabaseClient) return null;
+          if marker not in text:
+              old = subprocess.check_output(
+                  ['git', 'show', '9bb5033600feeb4ab2b44566b14b02b3e1144aa4:index.html'],
+                  text=True,
+                  encoding='utf-8'
+              )
 
-            // First use Supabase's persisted session. This is the normal path on reload.
-            try {
-                const { data, error } = await supabaseClient.auth.getSession();
-                if (!error && data?.session?.user) {
-                    return data.session;
-                }
-            } catch (error) {
-                console.warn('Initial auth session read failed:', error);
-            }
+              if 'id="transaction-modal"' not in text:
+                  start = old.find('    <!-- Quick Add Transaction Modal -->')
+                  end = old.find('    <footer class=', start)
+                  if start == -1 or end == -1:
+                      raise SystemExit('Original Cash Log modal block not found')
+                  modal_block = old[start:end]
+                  footer_anchor = '    <footer class='
+                  if footer_anchor in text:
+                      text = text.replace(footer_anchor, modal_block + '\n' + footer_anchor, 1)
+                  else:
+                      text = text.replace('</body>', modal_block + '\n</body>', 1)
 
-            // If the access token expired while the page was closed/suspended, explicitly
-            // refresh it instead of treating the user as signed out.
-            try {
-                const { data, error } = await supabaseClient.auth.refreshSession();
-                if (!error && data?.session?.user) {
-                    return data.session;
-                }
-            } catch (error) {
-                console.warn('Auth refresh failed:', error);
-            }
+              if 'id="lending-view-toggle"' not in text:
+                  toggle_html = '''
+                    <div id="lending-view-toggle" class="flex flex-wrap gap-2 mb-5">
+                        <button type="button" id="lending-view-lent" class="px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400">Lending</button>
+                        <button type="button" id="lending-view-borrowed" class="px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700">Borrowing</button>
+                    </div>
+              '''
+                  route_start = text.find('<div id="route-lending-hub"')
+                  summary = text.find('<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">', route_start)
+                  if route_start == -1 or summary == -1:
+                      raise SystemExit('Lending Hub summary anchor not found')
+                  text = text[:summary] + toggle_html + text[summary:]
 
-            // Recover sessions written by older CoinFlow builds or under Supabase's
-            // default sb-* storage key, then let Supabase persist the refreshed session.
-            try {
-                const restored = await restoreSupabaseSession();
-                if (restored?.user) {
-                    const { data } = await supabaseClient.auth.getSession();
-                    return data?.session?.user ? data.session : restored;
-                }
-            } catch (error) {
-                console.warn('Legacy auth recovery failed:', error);
-            }
-
-            return null;
-        }
-
+              helper = '''
+<script>
+/* COINFLOW_CASHLOG_LENDING_COMMIT_V1 */
+(function () {
+  function setLendingView(view) {
+    const lent = document.getElementById('lent-list-container');
+    const borrowed = document.getElementById('borrowed-list-container');
+    const lentCard = lent && lent.closest('.interactive-card');
+    const borrowedCard = borrowed && borrowed.closest('.interactive-card');
+    const lentBtn = document.getElementById('lending-view-lent');
+    const borrowedBtn = document.getElementById('lending-view-borrowed');
+    if (view === 'lent') {
+      if (lentCard) lentCard.classList.remove('hidden');
+      if (borrowedCard) borrowedCard.classList.add('hidden');
+    } else {
+      if (lentCard) lentCard.classList.add('hidden');
+      if (borrowedCard) borrowedCard.classList.remove('hidden');
+    }
+    if (lentBtn) lentBtn.className = view === 'lent' ? 'px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400' : 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700';
+    if (borrowedBtn) borrowedBtn.className = view === 'borrowed' ? 'px-4 py-2.5 rounded-xl bg-rose-500 text-white font-extrabold text-sm border border-rose-400' : 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700';
+  }
+  function boot() {
+    const dashboardAdd = document.getElementById('dashboard-add-btn');
+    const quickAdd = document.getElementById('quick-add-btn');
+    if (dashboardAdd && quickAdd) dashboardAdd.addEventListener('click', function () { quickAdd.click(); });
+    const lentBtn = document.getElementById('lending-view-lent');
+    const borrowedBtn = document.getElementById('lending-view-borrowed');
+    if (lentBtn) lentBtn.addEventListener('click', function () { setLendingView('lent'); });
+    if (borrowedBtn) borrowedBtn.addEventListener('click', function () { setLendingView('borrowed'); });
+    setLendingView('lent');
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
+})();
+</script>
 '''
-              if marker not in text:
-                  raise SystemExit('initAuth marker not found')
-              text = text.replace(marker, recovery + marker, 1)
+              text = text.replace('</body>', helper + '\n</body>', 1)
+              path.write_text(text, encoding='utf-8')
+              print('Cash Log and Lending Hub restoration applied')
 
-          pattern = re.compile(
-              r'        async function initAuth\(\) \{.*?\n            \}\n\n            async function startApp\(\)',
-              re.S,
-          )
-          replacement = '''        async function initAuth() {
-                if (!supabaseClient) {
-                    showSignedOutView();
-                    return false;
-                }
-
-                try {
-                    // Recover/refresh the persisted Supabase session before deciding that
-                    // the user needs to sign in again.
-                    const session = await recoverAuthSession();
-                    if (session?.user) {
-                        await showSignedInView(session.user);
-                        return true;
-                    }
-
-                    showSignedOutView();
-                    return false;
-                } catch (error) {
-                    console.error('Auth initialization error:', error);
-                    showSignedOutView();
-                    return false;
-                }
-            }
-
-            async function startApp()'''
-          text, count = pattern.subn(replacement, text, count=1)
-          if count != 1:
-              raise SystemExit('initAuth block not found')
-
-          path.write_text(text, encoding='utf-8')
+      - name: Commit actual application fix to main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/apply-auth-fix.yml .github/workflows/restore-cashlog-lending.yml || true
+          if git diff --cached --quiet; then
+            echo "No application changes detected"
+            exit 0
+          fi
+          git commit -m "fix: restore working cash log and lending hub controls"
+          git push
