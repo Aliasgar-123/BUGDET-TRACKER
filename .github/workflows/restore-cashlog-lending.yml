@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,7 +25,7 @@ jobs:
 
           path = Path('index.html')
           text = path.read_text(encoding='utf-8')
-          marker = 'COINFLOW_CASHLOG_LENDING_RESTORE_V5'
+          marker = 'COINFLOW_CASHLOG_LENDING_RESTORE_V6'
 
           if marker not in text:
               old = subprocess.check_output(
@@ -62,7 +61,7 @@ jobs:
 
               helper = '''
 <script>
-/* COINFLOW_CASHLOG_LENDING_RESTORE_V5 */
+/* COINFLOW_CASHLOG_LENDING_RESTORE_V6 */
 (function () {
   function setLendingView(view) {
     const lent = document.getElementById('lent-list-container');
