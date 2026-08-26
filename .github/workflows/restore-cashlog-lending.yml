@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   patch:
-    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,10 +41,8 @@ jobs:
                   raise SystemExit('Could not locate original Cash Log / IOU modal block')
 
               modal_block = old[start:end]
-
-              # Avoid duplicate modal IDs if a future revision already contains them.
+              footer_anchor = '    <footer class='
               if 'id="transaction-modal"' not in text:
-                  footer_anchor = '    <footer class='
                   if footer_anchor not in text:
                       raise SystemExit('Current footer anchor not found')
                   text = text.replace(footer_anchor, modal_block + '\n' + footer_anchor, 1)
@@ -73,7 +70,6 @@ jobs:
     const borrowedCard = borrowed?.closest('.interactive-card');
     const lentBtn = document.getElementById('lending-view-lent');
     const borrowedBtn = document.getElementById('lending-view-borrowed');
-
     if (view === 'lent') {
       lentCard?.classList.remove('hidden');
       borrowedCard?.classList.add('hidden');
@@ -86,39 +82,32 @@ jobs:
       if (borrowedBtn) borrowedBtn.className = 'px-4 py-2.5 rounded-xl bg-rose-500 text-white font-extrabold text-sm border border-rose-400 shadow-lg shadow-rose-500/10';
     }
   }
-
   function boot() {
-    const dashboardAdd = document.getElementById('dashboard-add-btn');
-    const quickAdd = document.getElementById('quick-add-btn');
-    dashboardAdd?.addEventListener('click', () => quickAdd?.click());
-
+    document.getElementById('dashboard-add-btn')?.addEventListener('click', () => document.getElementById('quick-add-btn')?.click());
     document.getElementById('lending-view-lent')?.addEventListener('click', () => setLendingView('lent'));
     document.getElementById('lending-view-borrowed')?.addEventListener('click', () => setLendingView('borrowed'));
     setLendingView('lent');
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
-  } else {
-    boot();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })();
 </script>
 '''
-              if marker not in text:
-                  text = text.replace('</body>', helper + '</body>', 1)
-
+              text = text.replace('</body>', helper + '</body>', 1)
               path.write_text(text, encoding='utf-8')
-              print('Original Cash Log / IOU modals restored; Lending and Borrowing controls added')
-
+              print('Cash Log and Lending restoration applied')
           PY
 
-      - name: Commit and remove temporary workflow
+      - name: Commit patched index and remove workflow
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git rm .github/workflows/restore-cashlog-lending.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
           git commit -m "fix: restore cash log and lending controls"
           git push
