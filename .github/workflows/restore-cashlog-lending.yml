@@ -19,12 +19,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply Cash Log and Lending restoration
-        env:
-          PATCH_SCRIPT_B64: "5Jvxbk3iMmZ3cnsyIgObc+6rT6tLz7wV7gO4Jr2+zQ=="
         shell: bash
         run: |
-          echo "$PATCH_SCRIPT_B64" | base64 --decode > /tmp/patch.py
-          python3 /tmp/patch.py
+          python3 -c "import base64;exec(base64.b64decode('""" + b64 + """'))"
 
       - name: Commit the actual fix to main
         shell: bash
