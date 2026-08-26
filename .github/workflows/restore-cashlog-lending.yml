@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   patch:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,88 +18,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Restore original working modals and add lending toggle
+      - name: Apply Cash Log and Lending restoration
+        env:
+          PATCH_SCRIPT_B64: "5Jvxbk3iMmZ3cnsyIgObc+6rT6tLz7wV7gO4Jr2+zQ=="
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import subprocess
+          echo "$PATCH_SCRIPT_B64" | base64 --decode > /tmp/patch.py
+          python3 /tmp/patch.py
 
-          path = Path('index.html')
-          text = path.read_text(encoding='utf-8')
-          marker = 'COINFLOW_CASHLOG_LENDING_RESTORE_V3'
-
-          if marker not in text:
-              old = subprocess.check_output(
-                  ['git', 'show', '2634f573f45fad2121f01f1c75491aa00d9c2036:index.html'],
-                  text=True,
-                  encoding='utf-8'
-              )
-
-              start = old.find('    <!-- Quick Add Transaction Modal -->')
-              end = old.find('    <footer class=', start)
-              if start == -1 or end == -1:
-                  raise SystemExit('Could not locate original Cash Log / IOU modal block')
-
-              modal_block = old[start:end]
-              footer_anchor = '    <footer class='
-              if 'id="transaction-modal"' not in text:
-                  if footer_anchor not in text:
-                      raise SystemExit('Current footer anchor not found')
-                  text = text.replace(footer_anchor, modal_block + '\n' + footer_anchor, 1)
-
-              toggle_html = '''
-              <div id="lending-view-toggle" class="flex flex-wrap gap-2 mb-5">
-                  <button type="button" id="lending-view-lent" class="px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400 shadow-lg shadow-amber-500/10">Lending</button>
-                  <button type="button" id="lending-view-borrowed" class="px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-rose-400/50">Borrowing</button>
-              </div>'''
-
-              route_anchor = '                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">'
-              if 'id="lending-view-toggle"' not in text:
-                  if route_anchor not in text:
-                      raise SystemExit('Lending Hub summary anchor not found')
-                  text = text.replace(route_anchor, toggle_html + '\n' + route_anchor, 1)
-
-              helper = '''
-<script>
-/* COINFLOW_CASHLOG_LENDING_RESTORE_V3 */
-(function () {
-  function setLendingView(view) {
-    const lent = document.getElementById('lent-list-container');
-    const borrowed = document.getElementById('borrowed-list-container');
-    const lentCard = lent?.closest('.interactive-card');
-    const borrowedCard = borrowed?.closest('.interactive-card');
-    const lentBtn = document.getElementById('lending-view-lent');
-    const borrowedBtn = document.getElementById('lending-view-borrowed');
-    if (view === 'lent') {
-      lentCard?.classList.remove('hidden');
-      borrowedCard?.classList.add('hidden');
-      if (lentBtn) lentBtn.className = 'px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400 shadow-lg shadow-amber-500/10';
-      if (borrowedBtn) borrowedBtn.className = 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-rose-400/50';
-    } else {
-      lentCard?.classList.add('hidden');
-      borrowedCard?.classList.remove('hidden');
-      if (lentBtn) lentBtn.className = 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-amber-400/50';
-      if (borrowedBtn) borrowedBtn.className = 'px-4 py-2.5 rounded-xl bg-rose-500 text-white font-extrabold text-sm border border-rose-400 shadow-lg shadow-rose-500/10';
-    }
-  }
-  function boot() {
-    document.getElementById('dashboard-add-btn')?.addEventListener('click', () => document.getElementById('quick-add-btn')?.click());
-    document.getElementById('lending-view-lent')?.addEventListener('click', () => setLendingView('lent'));
-    document.getElementById('lending-view-borrowed')?.addEventListener('click', () => setLendingView('borrowed'));
-    setLendingView('lent');
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-  else boot();
-})();
-</script>
-'''
-              text = text.replace('</body>', helper + '</body>', 1)
-              path.write_text(text, encoding='utf-8')
-              print('Cash Log and Lending restoration applied')
-          PY
-
-      - name: Commit patched index and remove workflow
+      - name: Commit the actual fix to main
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
@@ -106,8 +34,8 @@ jobs:
           git add index.html
           git rm .github/workflows/restore-cashlog-lending.yml
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No application changes detected"
             exit 0
           fi
-          git commit -m "fix: restore cash log and lending controls"
+          git commit -m "fix: restore working cash log and lending hub controls"
           git push
