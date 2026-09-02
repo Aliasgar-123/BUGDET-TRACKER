@@ -226,7 +226,7 @@
 
     <header class="app-header sticky top-0 z-40 w-full border-b border-amber-500/10">
         <div class="h-16 px-4 lg:px-6 flex items-center justify-between">
-            <button id="mobile-nav-toggle" class="lg:hidden p-2 rounded-xl border border-slate-700 text-amber-400" aria-label="Open navigation">☰</button>
+            <button id="mobile-nav-toggle" class=" p-2 rounded-xl border border-slate-700 text-amber-400" aria-label="Open navigation">☰</button>
             <div class="flex items-center gap-3 cursor-pointer" id="logo-home-trigger">
                 <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20"><span class="text-xl">₿</span></div>
                 <div>
@@ -244,8 +244,6 @@
     </header>
 
     <main class="flex-grow w-full">
-        <div id="auth-view" class="max-w-md mx-auto px-4 py-16">
-
         <div id="auth-view" class="max-w-md mx-auto my-12 p-8 rounded-2xl border shadow-xl auth-card space-y-6">
             <div class="text-center">
                 <h2 id="auth-title" class="text-2xl font-bold tracking-tight text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.2)]">Sign In to Your Account</h2>
@@ -292,11 +290,8 @@
             </div>
         </div>
 
-
-        </div>
-
         <div id="main-app-workspace" class="hidden min-h-[calc(100vh-64px)]">
-            <aside id="app-sidebar" class="fixed left-0 top-16 bottom-0 z-30 w-64 -translate-x-full lg:translate-x-0 transition-transform duration-300 border-r border-slate-800/80 bg-[#0a0f1d]/95 backdrop-blur-xl">
+            <aside id="app-sidebar" class="fixed left-0 top-16 bottom-0 z-30 w-64 -translate-x-full transition-transform duration-300 border-r border-slate-800/80 bg-[#0a0f1d]/95 backdrop-blur-xl">
                 <div class="h-full flex flex-col p-4">
                     <div class="px-3 pt-2 pb-4"><p class="text-[10px] uppercase tracking-[0.22em] text-slate-500 font-bold">Workspace</p><p class="text-sm text-slate-300 mt-1">Financial command center</p></div>
                     <nav class="space-y-1.5" aria-label="Primary navigation">
@@ -311,9 +306,9 @@
                     </div>
                 </div>
             </aside>
-            <div id="sidebar-overlay" class="fixed inset-0 z-20 bg-black/60 hidden lg:hidden"></div>
+            <div id="sidebar-overlay" class="fixed inset-0 z-20 bg-black/60 hidden"></div>
 
-            <section class="lg:ml-64 p-4 sm:p-6 lg:p-8 max-w-[1600px]">
+            <section class="p-4 sm:p-6 lg:p-8 max-w-[1600px]">
                 <div id="route-dashboard" class="route-page">
                     <div class="mb-7 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                         <div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Overview</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Your Financial Dashboard</h1><p class="text-sm text-slate-400 mt-2">Wallet, cash flow and obligations at a glance.</p></div>
@@ -321,20 +316,33 @@
                     </div>
 
                     <section id="hero-metrics-grid" class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-                        <div class="p-6 rounded-2xl border interactive-card metric-gold"><div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-400">Pocket Money Wallet</span><span class="metric-pill gold">Balance</span></div><div id="metric-total-balance" class="text-3xl font-extrabold text-amber-300">$0.00</div><p class="text-xs text-slate-500 mt-2">All-time net wallet position.</p></div>
-                        <div class="p-6 rounded-2xl border interactive-card metric-income"><div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-400">Current Month Inflows</span><span id="label-current-month-income" class="metric-pill green">This Month</span></div><div id="metric-monthly-income" class="text-3xl font-extrabold text-emerald-400">$0.00</div><p class="text-xs text-slate-500 mt-2">Credits recorded this month.</p></div>
-                        <div class="p-6 rounded-2xl border interactive-card metric-expense"><div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-400">Current Month Outflows</span><span id="label-current-month-expense" class="metric-pill red">This Month</span></div><div id="metric-monthly-expenses" class="text-3xl font-extrabold text-rose-400">$0.00</div><p class="text-xs text-slate-500 mt-2">Debits recorded this month.</p></div>
+                        <div class="p-6 rounded-2xl border interactive-card metric-gold"><div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-400">Pocket Money Wallet</span><span class="metric-pill gold">Balance</span></div><div id="metric-total-balance" class="text-3xl font-extrabold text-amber-300">₹0.00</div><p class="text-xs text-slate-500 mt-2">All-time net wallet position.</p></div>
+                        <div class="p-6 rounded-2xl border interactive-card metric-income"><div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-400">Current Month Inflows</span><span id="label-current-month-income" class="metric-pill green">This Month</span></div><div id="metric-monthly-income" class="text-3xl font-extrabold text-emerald-400">₹0.00</div><p class="text-xs text-slate-500 mt-2">Credits recorded this month.</p></div>
+                        <div class="p-6 rounded-2xl border interactive-card metric-expense"><div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-400">Current Month Outflows</span><span id="label-current-month-expense" class="metric-pill red">This Month</span></div><div id="metric-monthly-expenses" class="text-3xl font-extrabold text-rose-400">₹0.00</div><p class="text-xs text-slate-500 mt-2">Debits recorded this month.</p></div>
                     </section>
 
                     <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
-                        <div class="summary-mini"><span>Total Credits</span><strong id="aggregate-total-credit">$0.00</strong></div>
-                        <div class="summary-mini"><span>Total Debits</span><strong id="aggregate-total-debit" class="text-rose-400">$0.00</strong></div>
+                        <div class="summary-mini"><span>Total Credits</span><strong id="aggregate-total-credit">₹0.00</strong></div>
+                        <div class="summary-mini"><span>Total Debits</span><strong id="aggregate-total-debit" class="text-rose-400">₹0.00</strong></div>
                         <div class="summary-mini"><span>Active IOUs</span><strong id="dashboard-active-ious">0</strong></div>
                     </section>
 
                     <section class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-7">
-                        <div class="xl:col-span-2 p-6 rounded-2xl border interactive-card"><div class="flex items-center justify-between"><div><h2 class="text-lg font-bold">Lending & Borrowing Snapshot</h2><p class="text-xs text-slate-500 mt-1">Outstanding peer-to-peer obligations.</p></div><button class="route-shortcut px-3 py-2 rounded-xl border border-amber-500/20 text-amber-300 text-xs font-bold" data-route="/lending-hub">Open Hub →</button></div><div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5"><div class="summary-mini"><span>Total Lent</span><strong id="dashboard-total-lent" class="text-emerald-400">$0.00</strong></div><div class="summary-mini"><span>Total Borrowed</span><strong id="dashboard-total-borrowed" class="text-rose-400">$0.00</strong></div><div class="summary-mini"><span>Top Debtor</span><strong id="dashboard-top-debtor">—</strong></div><div class="summary-mini"><span>Top Creditor</span><strong id="dashboard-top-creditor">—</strong></div></div></div>
+                        <div class="xl:col-span-2 p-6 rounded-2xl border interactive-card"><div class="flex items-center justify-between"><div><h2 class="text-lg font-bold">Lending & Borrowing Snapshot</h2><p class="text-xs text-slate-500 mt-1">Outstanding peer-to-peer obligations.</p></div><button class="route-shortcut px-3 py-2 rounded-xl border border-amber-500/20 text-amber-300 text-xs font-bold" data-route="/lending-hub">Open Hub →</button></div><div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5"><div class="summary-mini"><span>Total Lent</span><strong id="dashboard-total-lent" class="text-emerald-400">₹0.00</strong></div><div class="summary-mini"><span>Total Borrowed</span><strong id="dashboard-total-borrowed" class="text-rose-400">₹0.00</strong></div><div class="summary-mini"><span>Top Debtor</span><strong id="dashboard-top-debtor">—</strong></div><div class="summary-mini"><span>Top Creditor</span><strong id="dashboard-top-creditor">—</strong></div></div></div>
                         <div class="p-6 rounded-2xl border interactive-card"><div class="flex items-center justify-between"><h2 class="text-lg font-bold">Profile</h2><span class="metric-pill gold">Synced</span></div><p class="text-xs text-slate-500 mt-2">Signed-in workspace identity.</p><div class="mt-4 text-sm text-slate-300"><span id="welcome-text">Hey Campus Champ</span></div><div class="text-xs text-slate-500 mt-1">Standard: <span id="display-standard" class="text-slate-300 font-bold">—</span></div></div>
+                    </section>
+
+                    <section id="coinflow-inline-cash-log" class="p-6 rounded-2xl border interactive-card mb-6">
+                        <div class="mb-5"><p class="text-xs uppercase tracking-[0.18em] text-amber-400 font-bold">Quick Entry</p><h2 class="text-xl font-bold mt-1">Add Cash Log</h2><p class="text-xs text-slate-400 mt-1">Record income or expenses directly from your dashboard.</p></div>
+                        <form id="coinflow-inline-transaction-form" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-end">
+                            <div class="xl:col-span-1"><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Type</label><div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-950 border border-slate-800"><button type="button" id="inline-type-expense" class="py-2 rounded-lg text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20">Expense</button><button type="button" id="inline-type-income" class="py-2 rounded-lg text-xs font-bold text-slate-400">Income</button></div></div>
+                            <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Date</label><input id="inline-tx-date" type="date" required class="w-full px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100"></div>
+                            <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Amount (₹)</label><input id="inline-tx-amount" type="number" min="0.01" step="0.01" required class="w-full px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 text-sm font-semibold text-slate-100" placeholder="0.00"></div>
+                            <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Category</label><select id="inline-tx-category" required class="w-full px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100"></select></div>
+                            <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Description <span class="text-slate-500 normal-case">(optional)</span></label><input id="inline-tx-description" type="text" class="w-full px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100" placeholder="What was this for?"></div>
+                            <input id="inline-tx-type" type="hidden" value="expense">
+                            <div class="md:col-span-2 xl:col-span-5 flex justify-end"><button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20">Commit Transaction</button></div>
+                        </form>
                     </section>
 
                     <div id="view-dashboard" class="tab-pane block">
@@ -352,14 +360,14 @@
                         <button type="button" id="lending-view-lent" class="px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400">Lending</button>
                         <button type="button" id="lending-view-borrowed" class="px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700">Borrowing</button>
                     </div>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6"><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Total Lent Outstanding</span><strong id="hub-total-lent" class="block text-3xl mt-2 text-emerald-400">$0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Total Borrowed Outstanding</span><strong id="hub-total-borrowed" class="block text-3xl mt-2 text-rose-400">$0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Active Agreements</span><strong id="hub-active-count" class="block text-3xl mt-2 text-amber-300">0</strong></div></div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6"><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Total Lent Outstanding</span><strong id="hub-total-lent" class="block text-3xl mt-2 text-emerald-400">₹0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Total Borrowed Outstanding</span><strong id="hub-total-borrowed" class="block text-3xl mt-2 text-rose-400">₹0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Active Agreements</span><strong id="hub-active-count" class="block text-3xl mt-2 text-amber-300">0</strong></div></div>
                     <div id="view-lending" class="tab-pane block"><div class="grid grid-cols-1 lg:grid-cols-2 gap-5"><div class="p-6 rounded-2xl border interactive-card"><h2 class="text-lg font-bold text-emerald-400 mb-4">Cash Lent to Friends</h2><div id="lent-list-container" class="space-y-3"></div></div><div class="p-6 rounded-2xl border interactive-card"><h2 class="text-lg font-bold text-rose-400 mb-4">Money Borrowed from Friends</h2><div id="borrowed-list-container" class="space-y-3"></div></div></div><div class="p-6 rounded-2xl border interactive-card mt-5"><h2 class="text-lg font-bold mb-4">Transaction History</h2><div id="lending-history-list" class="space-y-2"></div></div></div>
                 </div>
 
                 <div id="route-statistics" class="route-page hidden">
                     <div class="mb-7"><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Insights</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Statistics & Analysis</h1><p class="text-sm text-slate-400 mt-2">Compare periods and understand where your money goes.</p></div>
                     <div class="flex flex-wrap gap-2 mb-5"><button class="period-btn active" data-period="weekly">Weekly</button><button class="period-btn" data-period="monthly">Monthly</button><button class="period-btn" data-period="yearly">Yearly</button><button class="period-btn" data-period="custom">Custom Range</button><input id="stats-start" type="date" class="stats-date hidden"><input id="stats-end" type="date" class="stats-date hidden"></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6"><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Current Period</span><strong id="stats-current" class="block text-2xl mt-2">$0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Previous Period</span><strong id="stats-previous" class="block text-2xl mt-2">$0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Change</span><strong id="stats-change" class="block text-2xl mt-2 text-amber-300">0%</strong></div></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6"><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Current Period</span><strong id="stats-current" class="block text-2xl mt-2">₹0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Previous Period</span><strong id="stats-previous" class="block text-2xl mt-2">₹0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Change</span><strong id="stats-change" class="block text-2xl mt-2 text-amber-300">0%</strong></div></div>
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-5"><div class="xl:col-span-2 p-6 rounded-2xl border interactive-card"><div class="flex items-center justify-between mb-5"><h2 class="text-lg font-bold">Cash Flow Trend</h2><div class="flex gap-1"><button class="chart-mode active" data-chart="bar">Bar</button><button class="chart-mode" data-chart="line">Line</button><button class="chart-mode" data-chart="area">Area</button><button class="chart-mode" data-chart="doughnut">Donut</button></div></div><div class="h-[360px]"><canvas id="statisticsChart"></canvas></div></div><div class="p-6 rounded-2xl border interactive-card"><h2 class="text-lg font-bold mb-4">Category Breakdown</h2><div id="analytics-breakdown-list" class="space-y-3"></div></div></div>
                     <div id="view-analytics" class="hidden"><canvas id="analyticsChart"></canvas></div>
                 </div>
@@ -375,7 +383,6 @@
             </section>
         </div>
 
-        <div id="settings-page-workspace" class="hidden"><!-- NEWLY CONSTRUCTED DEDICATED SETTINGS PAGE VIEW CONTAINER -->
         <div id="settings-page-workspace" class="space-y-6 hidden">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div class="flex items-center space-x-3">
@@ -464,10 +471,6 @@
 
             </div>
         </div>
-
-    </main>
-
-            </div>
     </main>
     <footer class="w-full border-t border-slate-900 py-6 text-center text-xs text-muted mt-auto">
         <p>&copy; 2026 CoinFlow Premium Core. Developed for Students.</p>
@@ -988,12 +991,12 @@
                 const moonBtn = document.getElementById('theme-moon');
                 if (state.theme === 'dark') {
                     document.documentElement.className = 'dark';
-                    if (sunBtn) sunBtn.classList.remove('hidden');
-                    if (moonBtn) moonBtn.classList.add('hidden');
+                    if (sunBtn) if (sunBtn) sunBtn.classList.remove('hidden');
+                    if (moonBtn) if (moonBtn) moonBtn.classList.add('hidden');
                 } else {
                     document.documentElement.className = 'light';
-                    if (moonBtn) moonBtn.classList.remove('hidden');
-                    if (sunBtn) sunBtn.classList.add('hidden');
+                    if (moonBtn) if (moonBtn) moonBtn.classList.remove('hidden');
+                    if (sunBtn) if (sunBtn) sunBtn.classList.add('hidden');
                 }
             }
 
@@ -1162,7 +1165,7 @@
                 if(tableBody) {
                     tableBody.innerHTML = '';
                     if(filteredTransactions.length === 0) {
-                        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-xs text-muted">No transactions found. ${filterState.type || filterState.category || filterState.month ? 'Try adjusting your filters.' : 'Click "Add Cash Log" to start!'}</td></tr>`;
+                        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-xs text-muted">No transactions found. ${filterState.type || filterState.category || filterState.month ? 'Try adjusting your filters.' : 'Click "Add Cash Log" to start!'}</td></tr>`;
                     } else {
                         [...filteredTransactions].reverse().forEach(t => {
                             const tr = document.createElement('tr');
@@ -1684,8 +1687,8 @@
                 document.getElementById('sidebar-settings')?.addEventListener('click',()=>document.getElementById('settings-page-trigger')?.click());
                 document.querySelector('.mobile-add-btn')?.addEventListener('click',()=>document.getElementById('quick-add-btn')?.click());
                 document.getElementById('dashboard-add-btn')?.addEventListener('click',()=>document.getElementById('quick-add-btn')?.click());
-                document.getElementById('mobile-nav-toggle')?.addEventListener('click',()=>{document.getElementById('app-sidebar')?.classList.toggle('open');document.getElementById('sidebar-overlay')?.classList.remove('hidden');});
-                document.getElementById('sidebar-overlay')?.addEventListener('click',()=>{document.getElementById('app-sidebar')?.classList.remove('open');document.getElementById('sidebar-overlay')?.classList.add('hidden');});
+                const navToggle=document.getElementById('mobile-nav-toggle'); if(navToggle&&!navToggle.dataset.bound){navToggle.dataset.bound='1'; navToggle.setAttribute('aria-controls','app-sidebar'); navToggle.setAttribute('aria-expanded','false'); navToggle.addEventListener('click',()=>{const side=document.getElementById('app-sidebar'), ov=document.getElementById('sidebar-overlay'), open=!side?.classList.contains('open'); side?.classList.toggle('open',open); ov?.classList.toggle('hidden',!open); navToggle.setAttribute('aria-expanded',String(open));});}
+                document.getElementById('sidebar-overlay')?.addEventListener('click',()=>{document.getElementById('app-sidebar')?.classList.remove('open');document.getElementById('sidebar-overlay')?.classList.add('hidden');document.getElementById('mobile-nav-toggle')?.setAttribute('aria-expanded','false');});
                 window.addEventListener('popstate',()=>navigate(location.pathname,false));
                 document.querySelectorAll('.period-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.stats-date').forEach(i=>i.classList.toggle('hidden',btn.dataset.period!=='custom'));renderStatistics();}));
                 document.querySelectorAll('.chart-mode').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.chart-mode').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderStatistics();}));
@@ -1793,7 +1796,7 @@
                         <input type="date" id="tx-date" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Amount ($)</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Amount (₹)</label>
                         <input type="number" id="tx-amount" min="0.01" step="0.01" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm font-semibold text-slate-100">
                     </div>
                     <div>
@@ -1802,7 +1805,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Description</label>
-                        <input type="text" placeholder="e.g., Pizza Night Party" id="tx-description" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
+                        <input type="text" placeholder="Add description (optional)" id="tx-description" class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
                     </div>
                     <div class="flex justify-end space-x-3 pt-2">
                         <button type="button" class="modal-close-btn px-4 py-2 text-sm font-medium text-muted hover:text-slate-200" data-modal="transaction-modal">Cancel</button>
@@ -1853,7 +1856,7 @@
                     <input type="text" id="lending-person" placeholder="e.g., John Doe" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Initial Amount ($)</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Initial Amount (₹)</label>
                     <input type="number" id="lending-amount" min="0.01" step="0.01" required class="w-full px-3 py-2 rounded-xl border bg-slate-950 border-slate-800 text-sm font-semibold text-slate-100">
                 </div>
                 <div>
@@ -1908,5 +1911,23 @@
 })();
 </script>
 
+
+<script id="coinflow-inline-cashlog-script">
+/* COINFLOW_INLINE_CASHLOG_V1 */
+(function(){
+  function boot(){
+    const form=document.getElementById('coinflow-inline-transaction-form'); if(!form||form.dataset.bound)return; form.dataset.bound='1';
+    const type=document.getElementById('inline-tx-type'), date=document.getElementById('inline-tx-date'), cat=document.getElementById('inline-tx-category'), desc=document.getElementById('inline-tx-description');
+    date.valueAsDate=new Date();
+    function cats(){ const select=document.getElementById('inline-tx-category'); if(!select)return; select.innerHTML=''; const list=(window.coinflowStateCategories||[]); list.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;select.appendChild(o)}); }
+    function sync(){ if(typeof refreshSelectCategories==='function'){ const original=document.getElementById('tx-type'); if(original){original.value=type.value;refreshSelectCategories(); const source=document.getElementById('tx-category');cat.innerHTML=source?.innerHTML||''; } } }
+    document.getElementById('inline-type-expense')?.addEventListener('click',()=>{type.value='expense';document.getElementById('inline-type-expense').className='py-2 rounded-lg text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20';document.getElementById('inline-type-income').className='py-2 rounded-lg text-xs font-bold text-slate-400';sync()});
+    document.getElementById('inline-type-income')?.addEventListener('click',()=>{type.value='income';document.getElementById('inline-type-income').className='py-2 rounded-lg text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';document.getElementById('inline-type-expense').className='py-2 rounded-lg text-xs font-bold text-slate-400';sync()});
+    sync();
+    form.addEventListener('submit',e=>{e.preventDefault(); const original=document.getElementById('tx-type'), originalDate=document.getElementById('tx-date'), originalAmount=document.getElementById('tx-amount'), originalCat=document.getElementById('tx-category'), originalDesc=document.getElementById('tx-description'); if(!original||!originalDate||!originalAmount||!originalCat||!originalDesc)return; original.value=type.value;originalDate.value=date.value;originalAmount.value=document.getElementById('inline-tx-amount').value;originalCat.value=cat.value;originalDesc.value=desc.value; const tf=document.getElementById('transaction-form'); if(tf)tf.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})); });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>
 </body>
 </html>
