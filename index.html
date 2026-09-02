@@ -988,12 +988,12 @@
                 const moonBtn = document.getElementById('theme-moon');
                 if (state.theme === 'dark') {
                     document.documentElement.className = 'dark';
-                    sunBtn.classList.remove('hidden');
-                    moonBtn.classList.add('hidden');
+                    if (sunBtn) sunBtn.classList.remove('hidden');
+                    if (moonBtn) moonBtn.classList.add('hidden');
                 } else {
                     document.documentElement.className = 'light';
-                    moonBtn.classList.remove('hidden');
-                    sunBtn.classList.add('hidden');
+                    if (moonBtn) moonBtn.classList.remove('hidden');
+                    if (sunBtn) sunBtn.classList.add('hidden');
                 }
             }
 
