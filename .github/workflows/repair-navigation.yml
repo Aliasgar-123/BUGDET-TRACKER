@@ -1,113 +1,86 @@
-name: Repair CoinFlow navigation runtime
+name: Repair CoinFlow UI initialization
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   repair:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Restore original Cash Log and Lending Hub
-        shell: bash
+      - name: Repair frontend runtime
+        shell: python
         run: |
-          python3 - <<'PY'
           from pathlib import Path
-          import subprocess
+          import re
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
 
-          path = Path('index.html')
-          text = path.read_text(encoding='utf-8')
-          marker = 'COINFLOW_CASHLOG_LENDING_RESTORE_V4'
+          # The UI was not rendering because initTheme() assumed legacy theme-sun/theme-moon
+          # elements that no longer exist. Make those optional without changing Supabase logic.
+          s = s.replace("sunBtn.classList.remove('hidden');", "if (sunBtn) sunBtn.classList.remove('hidden');")
+          s = s.replace("moonBtn.classList.add('hidden');", "if (moonBtn) moonBtn.classList.add('hidden');")
+          s = s.replace("moonBtn.classList.remove('hidden');", "if (moonBtn) moonBtn.classList.remove('hidden');")
+          s = s.replace("sunBtn.classList.add('hidden');", "if (sunBtn) sunBtn.classList.add('hidden');")
 
-          if marker not in text:
-              old = subprocess.check_output(
-                  ['git', 'show', '2634f573f45fad2121f01f1c75491aa00d9c2036:index.html'],
-                  text=True,
-                  encoding='utf-8'
-              )
-              start = old.find('    <!-- Quick Add Transaction Modal -->')
-              end = old.find('    <footer class=', start)
-              if start == -1 or end == -1:
-                  raise SystemExit('Original Cash Log / IOU block not found')
+          # Remove the duplicate outer auth/settings wrappers that were accidentally introduced.
+          s = s.replace('''        <div id="auth-view" class="max-w-md mx-auto px-4 py-16">\n\n        <div id="auth-view"''', '''        <div id="auth-view"''', 1)
+          s = s.replace('''\n\n\n        </div>\n\n        <div id="main-app-workspace"''', '''\n\n        <div id="main-app-workspace"''', 1)
+          s = s.replace('''        <div id="settings-page-workspace" class="hidden"><!-- NEWLY CONSTRUCTED DEDICATED SETTINGS PAGE VIEW CONTAINER -->\n        <div id="settings-page-workspace" class="space-y-6 hidden">''', '''        <div id="settings-page-workspace" class="space-y-6 hidden">''', 1)
+          s = s.replace('''\n        </div>\n\n    </main>\n\n            </div>\n    </main>''', '''\n        </div>\n    </main>''', 1)
 
-              modal_block = old[start:end]
-              if 'id="transaction-modal"' not in text:
-                  anchor = '    <footer class='
-                  if anchor not in text:
-                      raise SystemExit('Current footer anchor not found')
-                  text = text.replace(anchor, modal_block + '\n' + anchor, 1)
+          # Use INR presentation consistently for visible currency.
+          for a,b in [('Amount ($)','Amount (₹)'),('Initial Amount ($)','Initial Amount (₹)')]: s=s.replace(a,b)
+          s=re.sub(r'\$(?=\s?\d)', '₹', s)
 
-              toggle_html = '''
-              <div id="lending-view-toggle" class="flex flex-wrap gap-2 mb-5">
-                  <button type="button" id="lending-view-lent" class="px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400 shadow-lg shadow-amber-500/10">Lending</button>
-                  <button type="button" id="lending-view-borrowed" class="px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-rose-400/50">Borrowing</button>
-              </div>'''
-              route_anchor = '                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">'
-              if 'id="lending-view-toggle"' not in text:
-                  if route_anchor not in text:
-                      raise SystemExit('Lending Hub summary anchor not found')
-                  text = text.replace(route_anchor, toggle_html + '\n' + route_anchor, 1)
+          # Description is optional.
+          s=re.sub(r'(<(?:input|textarea)\b[^>]*id=["\']tx-description["\'][^>]*?)\s+required(?=[\s>])', r'\1', s, flags=re.I)
+          s=s.replace('placeholder="e.g., Pizza Night Party"','placeholder="Add description (optional)"')
 
-              helper = '''
-<script>
-/* COINFLOW_CASHLOG_LENDING_RESTORE_V4 */
-(function () {
-  function setLendingView(view) {
-    const lent = document.getElementById('lent-list-container');
-    const borrowed = document.getElementById('borrowed-list-container');
-    const lentCard = lent?.closest('.interactive-card');
-    const borrowedCard = borrowed?.closest('.interactive-card');
-    const lentBtn = document.getElementById('lending-view-lent');
-    const borrowedBtn = document.getElementById('lending-view-borrowed');
-    if (view === 'lent') {
-      lentCard?.classList.remove('hidden');
-      borrowedCard?.classList.add('hidden');
-      if (lentBtn) lentBtn.className = 'px-4 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-sm border border-amber-400 shadow-lg shadow-amber-500/10';
-      if (borrowedBtn) borrowedBtn.className = 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-rose-400/50';
-    } else {
-      lentCard?.classList.add('hidden');
-      borrowedCard?.classList.remove('hidden');
-      if (lentBtn) lentBtn.className = 'px-4 py-2.5 rounded-xl bg-slate-900 text-slate-300 font-extrabold text-sm border border-slate-700 hover:border-amber-400/50';
-      if (borrowedBtn) borrowedBtn.className = 'px-4 py-2.5 rounded-xl bg-rose-500 text-white font-extrabold text-sm border border-rose-400 shadow-lg shadow-rose-500/10';
-    }
-  }
+          # Make table empty-state colspan match the six visible columns.
+          s=s.replace('colspan="5" class="text-center py-6', 'colspan="6" class="text-center py-6')
 
-  function boot() {
-    document.getElementById('dashboard-add-btn')?.addEventListener('click', () => document.getElementById('quick-add-btn')?.click());
-    document.getElementById('lending-view-lent')?.addEventListener('click', () => setLendingView('lent'));
-    document.getElementById('lending-view-borrowed')?.addEventListener('click', () => setLendingView('borrowed'));
-    setLendingView('lent');
-  }
+          # Fix the existing renderer's Type/Amount column ordering while preserving its data.
+          old = '''<td class="py-3 px-2 text-right font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">\n                                    ${t.type === 'income' ? '+' : '-'}₹${parseFloat(t.amount).toFixed(2)}\n                                </td>\n                                <td class="py-3 text-center">'''
+          new = '''<td class="py-3 px-2 text-center">\n                                    <span class="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-[10px] font-extrabold tracking-wider ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'}">${t.type === 'income' ? '＋ INCOME' : '− EXPENSE'}</span>\n                                </td>\n                                <td class="py-3 px-2 text-right font-bold tabular-nums ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">\n                                    ${t.type === 'income' ? '+' : '-'}₹${parseFloat(t.amount).toFixed(2)}\n                                </td>\n                                <td class="py-3 text-center">'''
+          if old in s: s=s.replace(old,new,1)
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-  else boot();
-})();
-</script>
-'''
-              text = text.replace('</body>', helper + '</body>', 1)
-              path.write_text(text, encoding='utf-8')
-              print('Restored original Cash Log and IOU modals plus Lending/Borrowing buttons')
-          PY
+          # Hide desktop sidebar by default; hamburger opens it on every viewport.
+          s=s.replace('w-64 -translate-x-full lg:translate-x-0 transition-transform', 'w-64 -translate-x-full transition-transform', 1)
+          s=s.replace('''<button id="mobile-nav-toggle" class="lg:hidden''','''<button id="mobile-nav-toggle" class="''',1)
+          s=s.replace('''<div id="sidebar-overlay" class="fixed inset-0 z-20 bg-black/60 hidden lg:hidden"></div>''','''<div id="sidebar-overlay" class="fixed inset-0 z-20 bg-black/60 hidden"></div>''',1)
+          s=s.replace('lg:ml-64 p-4 sm:p-6 lg:p-8','p-4 sm:p-6 lg:p-8',1)
 
-      - name: Commit repair and remove temporary workflow
+          # Make the hamburger work with the existing sidebar IDs and add accessibility state.
+          s=s.replace("document.getElementById('mobile-nav-toggle')?.addEventListener('click',()=>{document.getElementById('app-sidebar')?.classList.toggle('open');document.getElementById('sidebar-overlay')?.classList.remove('hidden');});", "const navToggle=document.getElementById('mobile-nav-toggle'); if(navToggle&&!navToggle.dataset.bound){navToggle.dataset.bound='1'; navToggle.setAttribute('aria-controls','app-sidebar'); navToggle.setAttribute('aria-expanded','false'); navToggle.addEventListener('click',()=>{const side=document.getElementById('app-sidebar'), ov=document.getElementById('sidebar-overlay'), open=!side?.classList.contains('open'); side?.classList.toggle('open',open); ov?.classList.toggle('hidden',!open); navToggle.setAttribute('aria-expanded',String(open));});}")
+          s=s.replace("document.getElementById('sidebar-overlay')?.addEventListener('click',()=>{document.getElementById('app-sidebar')?.classList.remove('open');document.getElementById('sidebar-overlay')?.classList.add('hidden');});", "document.getElementById('sidebar-overlay')?.addEventListener('click',()=>{document.getElementById('app-sidebar')?.classList.remove('open');document.getElementById('sidebar-overlay')?.classList.add('hidden');document.getElementById('mobile-nav-toggle')?.setAttribute('aria-expanded','false');});")
+
+          # Move the transaction form out of the modal and render it on Dashboard once.
+          if 'id="coinflow-inline-cash-log"' not in s:
+              marker='''                    <div id="view-dashboard" class="tab-pane block">'''
+              form='''                    <section id="coinflow-inline-cash-log" class="p-6 rounded-2xl border interactive-card mb-6">\n                        <div class="mb-5"><p class="text-xs uppercase tracking-[0.18em] text-amber-400 font-bold">Quick Entry</p><h2 class="text-xl font-bold mt-1">Add Cash Log</h2><p class="text-xs text-slate-400 mt-1">Record income or expenses directly from your dashboard.</p></div>\n                        <form id="coinflow-inline-transaction-form" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-end">\n                            <div class="xl:col-span-1"><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Type</label><div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-950 border border-slate-800"><button type="button" id="inline-type-expense" class="py-2 rounded-lg text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20">Expense</button><button type="button" id="inline-type-income" class="py-2 rounded-lg text-xs font-bold text-slate-400">Income</button></div></div>\n                            <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Date</label><input id="inline-tx-date" type="date" required class="w-full px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100"></div>\n                            <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Amount (₹)</label><input id="inline-tx-amount" type="number" min="0.01" step="0.01" required class="w-full px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 text-sm font-semibold text-slate-100" placeholder="0.00"></div>\n                            <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Category</label><select id="inline-tx-category" required class="w-full px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100"></select></div>\n                            <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Description <span class="text-slate-500 normal-case">(optional)</span></label><input id="inline-tx-description" type="text" class="w-full px-3 py-2.5 rounded-xl border bg-slate-950 border-slate-800 text-sm text-slate-100" placeholder="What was this for?"></div>\n                            <input id="inline-tx-type" type="hidden" value="expense">\n                            <div class="md:col-span-2 xl:col-span-5 flex justify-end"><button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20">Commit Transaction</button></div>\n                        </form>\n                    </section>\n\n'''
+              if marker in s: s=s.replace(marker,form+marker,1)
+
+          # Bind inline Cash Log to the existing state/persistence functions.
+          if 'COINFLOW_INLINE_CASHLOG_V1' not in s:
+              helper='''\n<script id="coinflow-inline-cashlog-script">\n/* COINFLOW_INLINE_CASHLOG_V1 */\n(function(){\n  function boot(){\n    const form=document.getElementById('coinflow-inline-transaction-form'); if(!form||form.dataset.bound)return; form.dataset.bound='1';\n    const type=document.getElementById('inline-tx-type'), date=document.getElementById('inline-tx-date'), cat=document.getElementById('inline-tx-category'), desc=document.getElementById('inline-tx-description');\n    date.valueAsDate=new Date();\n    function cats(){ const select=document.getElementById('inline-tx-category'); if(!select)return; select.innerHTML=''; const list=(window.coinflowStateCategories||[]); list.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;select.appendChild(o)}); }\n    function sync(){ if(typeof refreshSelectCategories==='function'){ const original=document.getElementById('tx-type'); if(original){original.value=type.value;refreshSelectCategories(); const source=document.getElementById('tx-category');cat.innerHTML=source?.innerHTML||''; } } }\n    document.getElementById('inline-type-expense')?.addEventListener('click',()=>{type.value='expense';document.getElementById('inline-type-expense').className='py-2 rounded-lg text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20';document.getElementById('inline-type-income').className='py-2 rounded-lg text-xs font-bold text-slate-400';sync()});\n    document.getElementById('inline-type-income')?.addEventListener('click',()=>{type.value='income';document.getElementById('inline-type-income').className='py-2 rounded-lg text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';document.getElementById('inline-type-expense').className='py-2 rounded-lg text-xs font-bold text-slate-400';sync()});\n    sync();\n    form.addEventListener('submit',e=>{e.preventDefault(); const original=document.getElementById('tx-type'), originalDate=document.getElementById('tx-date'), originalAmount=document.getElementById('tx-amount'), originalCat=document.getElementById('tx-category'), originalDesc=document.getElementById('tx-description'); if(!original||!originalDate||!originalAmount||!originalCat||!originalDesc)return; original.value=type.value;originalDate.value=date.value;originalAmount.value=document.getElementById('inline-tx-amount').value;originalCat.value=cat.value;originalDesc.value=desc.value; const tf=document.getElementById('transaction-form'); if(tf)tf.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})); });\n  }\n  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();\n})();\n</script>\n'''
+              s=s.replace('</body>',helper+'</body>',1)
+
+          p.write_text(s,encoding='utf-8')
+      - name: Commit repaired UI
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git rm .github/workflows/repair-navigation.yml
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git commit -m "fix: restore cash log and lending hub controls"
-          git push
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "fix: restore CoinFlow dashboard UI"
+          git push origin main
