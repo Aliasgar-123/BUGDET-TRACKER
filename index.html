@@ -201,6 +201,7 @@
         input::placeholder { color:#64748b; }
         #app-sidebar.open { transform: translateX(0); }
         @media (min-width: 1024px) { #app-sidebar { transform: translateX(0); } }
+        #app-sidebar.collapsed { transform: translateX(-100%); }
         #sidebar-overlay.visible { display: block; }
         .ledger-table { min-width: 760px; }
         .type-badge { display:inline-flex; align-items:center; justify-content:center; min-width:88px; padding:.3rem .55rem; border-radius:999px; border:1px solid; font-size:.65rem; font-weight:900; letter-spacing:.06em; }
@@ -1678,6 +1679,7 @@
                 document.querySelectorAll('.side-nav-item[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===route));
                 if(push) history.pushState({},'',route);
                 document.getElementById('app-sidebar')?.classList.remove('open');
+                document.getElementById('app-sidebar')?.classList.remove('collapsed');
                 document.getElementById('sidebar-overlay')?.classList.add('hidden');
                 document.getElementById('sidebar-overlay')?.classList.remove('visible');
                 document.getElementById('mobile-nav-toggle')?.setAttribute('aria-expanded', 'false');
@@ -1693,6 +1695,7 @@
                 const setSidebarState = (isOpen) => {
                     if (!sidebar || !overlay || !menuToggle) return;
                     sidebar.classList.toggle('open', isOpen);
+                    sidebar.classList.toggle('collapsed', !isOpen);
                     overlay.classList.toggle('hidden', !isOpen);
                     overlay.classList.toggle('visible', isOpen);
                     menuToggle.setAttribute('aria-expanded', String(isOpen));
