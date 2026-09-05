@@ -232,110 +232,6 @@
         .financial-value { font-variant-numeric: tabular-nums; }
 
         #settings-page-workspace { padding:2rem; max-width:1200px; margin:0 auto; }
-
-        /* Royal navy and cream visual system */
-        :root {
-            --fatimid-navy-1: #0c2041;
-            --fatimid-navy-2: #102d5c;
-            --fatimid-navy-3: #225897;
-            --fatimid-gold: #c59d45;
-            --fatimid-cream: #f7f6ec;
-            --fatimid-ivory: #ffffff;
-            --fatimid-border: rgba(201, 164, 92, 0.23);
-            --bg-main: var(--fatimid-navy-1);
-            --bg-card: var(--fatimid-ivory);
-            --bg-card-border: var(--fatimid-border);
-            --bg-input: var(--fatimid-cream);
-            --text-primary: var(--fatimid-navy-1);
-            --text-secondary: #52627a;
-            --text-muted: #6b7890;
-            --accent-primary: var(--fatimid-gold);
-            --accent-primary-hover: #d8b45b;
-            --accent-gold: var(--fatimid-gold);
-            --accent-gold-bright: #e0bd6a;
-            --card-radius: 1.25rem;
-            --card-shadow: 0 14px 35px rgba(12, 32, 65, 0.12);
-        }
-
-        html, body { background: var(--fatimid-navy-1); }
-        body { color: var(--fatimid-navy-1); padding-bottom: 76px; }
-        .bg-glow-layer { background: var(--fatimid-navy-1); opacity: 1; }
-        .light .bg-glow-layer { background: var(--fatimid-navy-1); opacity: 1; }
-        .light body { background: var(--fatimid-navy-1); color: var(--fatimid-navy-1); }
-
-        .app-header {
-            background: var(--fatimid-navy-1) !important;
-            border-color: var(--fatimid-border) !important;
-            box-shadow: 0 6px 24px rgba(4, 15, 34, 0.22);
-        }
-        .app-header input { min-width: 190px; }
-        .app-header .text-slate-400 { color: rgba(247, 246, 236, 0.68) !important; }
-        .app-header .text-amber-300,
-        .app-header .text-amber-400 { color: var(--fatimid-gold) !important; }
-        .app-header .bg-clip-text { background-image: none !important; color: var(--fatimid-gold) !important; }
-        .app-header .border-slate-700 { border-color: var(--fatimid-border) !important; }
-        #logo-home-trigger > div:first-child { background: var(--fatimid-gold) !important; color: var(--fatimid-navy-1) !important; border-color: var(--fatimid-gold) !important; border-radius: 999px; }
-        #header-avatar { background: var(--fatimid-cream); color: var(--fatimid-navy-1); border: 2px solid var(--fatimid-gold); }
-
-        #main-app-workspace {
-            max-width: 1680px;
-            margin: 1.5rem auto;
-            overflow: hidden;
-            background: var(--fatimid-cream);
-            border: 1px solid var(--fatimid-border);
-            border-radius: 1.25rem;
-            box-shadow: 0 20px 45px rgba(3, 14, 32, 0.2);
-        }
-        #main-app-workspace > section { color: var(--fatimid-navy-1); }
-        #app-sidebar { background: var(--fatimid-navy-1) !important; border-color: var(--fatimid-border) !important; }
-        .side-nav-item { color: rgba(247, 246, 236, 0.68); }
-        .side-nav-item:hover { color: var(--fatimid-cream); background: rgba(197, 157, 69, 0.12); }
-        .side-nav-item.active { color: var(--fatimid-gold); background: rgba(197, 157, 69, 0.14); border-color: var(--fatimid-border); box-shadow: inset 3px 0 0 var(--fatimid-gold); }
-
-        .interactive-card, #settings-page-workspace .interactive-card {
-            background: linear-gradient(to bottom, var(--fatimid-navy-2) 0, var(--fatimid-navy-2) 52px, var(--fatimid-ivory) 52px, var(--fatimid-ivory) 100%) !important;
-            border: 1px solid var(--fatimid-border) !important;
-            color: var(--fatimid-navy-1);
-            box-shadow: var(--card-shadow);
-            backdrop-filter: none;
-        }
-        .interactive-card > div:first-child h2, .interactive-card > div:first-child h3,
-        .interactive-card > h2:first-child, .interactive-card > h3:first-child,
-        .interactive-card > span:first-child { color: var(--fatimid-cream) !important; }
-        .interactive-card > div:first-child > span:first-child,
-        .interactive-card > div:first-child p { color: rgba(247, 246, 236, 0.72) !important; }
-        .interactive-card > div:first-child .text-slate-400,
-        .interactive-card > div:first-child .text-slate-500 { color: rgba(247, 246, 236, 0.72) !important; }
-        .interactive-card:hover { border-color: var(--fatimid-gold) !important; box-shadow: 0 16px 34px rgba(12, 32, 65, 0.16) !important; transform: translateY(-2px); }
-        .interactive-card h1, .interactive-card h2, .interactive-card h3,
-        .interactive-card .text-slate-200, .interactive-card .text-slate-300,
-        .interactive-card .text-slate-100, .interactive-card .text-slate-400,
-        #settings-page-workspace h1, #settings-page-workspace h2, #settings-page-workspace h3 { color: var(--fatimid-navy-1) !important; }
-        .interactive-card .text-slate-500, .interactive-card .text-muted { color: var(--text-muted) !important; }
-        .summary-mini { background: var(--fatimid-cream); border-color: var(--fatimid-border); }
-        .summary-mini span { color: var(--text-muted); }
-        .summary-mini strong { color: var(--fatimid-navy-1); }
-        #hero-metrics-grid .interactive-card { box-shadow: inset 0 4px 0 var(--fatimid-gold), var(--card-shadow); }
-        .metric-income, .metric-expense, .metric-gold { box-shadow: inset 0 4px 0 var(--fatimid-gold), var(--card-shadow) !important; }
-
-        .text-amber-300, .text-amber-400, .text-yellow-400 { color: var(--fatimid-gold) !important; }
-        .text-emerald-400 { color: #187c61 !important; }
-        .text-rose-400 { color: #a63d45 !important; }
-        .bg-amber-500, .bg-gradient-to-r.from-amber-500 { background: var(--fatimid-navy-2) !important; }
-        button.bg-amber-500, button[class*="from-amber"] { color: var(--fatimid-cream) !important; border: 1px solid var(--fatimid-gold); }
-        .border-amber-500\/20, .border-amber-500\/10 { border-color: var(--fatimid-border) !important; }
-        .period-btn, .chart-mode, .stats-date { background: var(--fatimid-ivory); color: var(--fatimid-navy-1); border-color: var(--fatimid-border); }
-        .period-btn.active, .chart-mode.active { background: var(--fatimid-gold); border-color: var(--fatimid-gold); color: var(--fatimid-navy-1); }
-        input, select, textarea, .bg-slate-950, .bg-slate-900\/50, .bg-slate-950\/50 { background-color: var(--fatimid-cream) !important; color: var(--fatimid-navy-1) !important; border-color: var(--fatimid-border) !important; color-scheme: light; }
-        select option { background: var(--fatimid-ivory) !important; color: var(--fatimid-navy-1) !important; }
-        input::placeholder { color: #7b8798; }
-        input:focus, select:focus, textarea:focus { border-color: var(--fatimid-gold) !important; box-shadow: 0 0 0 3px rgba(197, 157, 69, 0.18) !important; background: var(--fatimid-ivory) !important; }
-        .type-badge.income { color: #187c61; background: rgba(24, 124, 97, 0.1); border-color: rgba(24, 124, 97, 0.25); box-shadow: none; }
-        .type-badge.expense { color: #a63d45; background: rgba(166, 61, 69, 0.1); border-color: rgba(166, 61, 69, 0.25); box-shadow: none; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--fatimid-gold); }
-        footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 35; background: var(--fatimid-navy-1); border-color: var(--fatimid-border) !important; color: rgba(247, 246, 236, 0.68) !important; }
-        #auth-view { background: var(--fatimid-ivory) !important; color: var(--fatimid-navy-1); border-color: var(--fatimid-border) !important; }
-        #auth-view h2 { color: var(--fatimid-navy-2) !important; }
     </style>
     <script>
         tailwind.config = {
@@ -343,12 +239,9 @@
             theme: {
                 extend: {
                     colors: {
-                        fatimidNavy1: '#0c2041',
-                        fatimidNavy2: '#102d5c',
-                        fatimidNavy3: '#225897',
-                        fatimidGold: '#c59d45',
-                        fatimidCream: '#f7f6ec',
-                        fatimidIvory: '#ffffff'
+                        goldPrimary: '#f59e0b',
+                        goldHover: '#d97706',
+                        richBlue: '#0a1128'
                     }
                 }
             }
@@ -370,9 +263,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <input id="global-search" type="search" aria-label="Search transactions" placeholder="Search ledger..." class="hidden lg:block px-3 py-2 rounded-xl border text-xs">
                 <span id="header-user-email" class="hidden md:block text-xs text-slate-400">Not signed in</span>
-                <span id="header-avatar" class="hidden sm:flex w-9 h-9 items-center justify-center rounded-full text-xs font-extrabold">C</span>
                 <button id="theme-toggle-btn" class="p-2.5 rounded-xl border border-slate-700 hover:bg-amber-500/10 text-amber-300" title="Toggle theme">◐</button>
                 <button id="settings-page-trigger" class="p-2.5 rounded-xl border border-slate-700 hover:bg-amber-500/10 text-amber-300" title="Settings">⚙</button>
             </div>
@@ -429,7 +320,7 @@
 
         </div>
 
-        <div id="main-app-workspace" class="hidden min-h-[calc(100vh-64px)] royal-shell">
+        <div id="main-app-workspace" class="hidden min-h-[calc(100vh-64px)]">
             <aside id="app-sidebar" class="fixed left-0 top-16 bottom-0 z-30 w-64 -translate-x-full transition-transform duration-300 border-r border-slate-800/80 bg-[#0a0f1d]/95 backdrop-blur-xl" aria-label="Sidebar navigation">
                 <div class="h-full flex flex-col p-4">
                     <div class="px-3 pt-2 pb-4"><p class="text-[10px] uppercase tracking-[0.22em] text-slate-500 font-bold">Workspace</p><p class="text-sm text-slate-300 mt-1">Financial command center</p></div>
@@ -1831,12 +1722,6 @@
                 document.getElementById('page-income-categories')?.addEventListener('click',handleCategoryDelete);
                 document.getElementById('page-expense-categories')?.addEventListener('click',handleCategoryDelete);
                 document.getElementById('ledger-search')?.addEventListener('input',applyDashboardFilters);
-                document.getElementById('global-search')?.addEventListener('input', event => {
-                    const ledgerSearch = document.getElementById('ledger-search');
-                    if (!ledgerSearch) return;
-                    ledgerSearch.value = event.target.value;
-                    applyDashboardFilters();
-                });
                 navigate(location.pathname,false);
             }
             function handleCategoryDelete(e){
