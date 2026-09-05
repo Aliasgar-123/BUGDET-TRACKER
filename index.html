@@ -78,6 +78,29 @@
             --accent-warn: #dc2626;
         }
 
+        .light body { background: #f4f7fb; color: #0f172a; }
+        .light .app-header { background: rgba(255, 255, 255, .94) !important; border-color: #e2e8f0 !important; }
+        .light #app-sidebar { background: rgba(255, 255, 255, .97) !important; border-color: #e2e8f0 !important; }
+        .light .side-nav-item { color: #475569; }
+        .light .side-nav-item:hover { color: #0f172a; background: rgba(212, 175, 55, .1); }
+        .light .side-nav-item.active { color: #8a6500; background: rgba(212, 175, 55, .13); border-color: rgba(180, 135, 0, .25); }
+        .light header, .light .tab-pane > div, .light .rounded-2xl, .light .rounded-xl, .light .auth-card { box-shadow: 0 8px 24px rgba(15, 23, 42, .06); }
+        .light .bg-slate-950, .light .bg-slate-900\/50, .light .bg-slate-950\/50 { background-color: #ffffff !important; }
+        .light input, .light select, .light textarea, .light .stats-date, .light .period-btn, .light .chart-mode { background-color: #ffffff !important; color: #0f172a !important; border-color: #cbd5e1 !important; color-scheme: light; }
+        .light select option { background: #ffffff !important; color: #0f172a !important; }
+        .light input::placeholder { color: #64748b; }
+        .light .text-slate-100, .light .text-slate-200, .light .text-slate-300 { color: #1e293b !important; }
+        .light .text-slate-400 { color: #475569 !important; }
+        .light .text-slate-500 { color: #64748b !important; }
+        .light .border-slate-700, .light .border-slate-800, .light .border-slate-900 { border-color: #dbe3ee !important; }
+        .light .divide-slate-900 > :not([hidden]) ~ :not([hidden]) { border-color: #e2e8f0 !important; }
+        .light .summary-mini { background: #ffffff; border-color: #dbe3ee; }
+        .light .summary-mini strong { color: #0f172a; }
+        .light .period-btn, .light .chart-mode { color: #475569; }
+        .light .period-btn.active, .light .chart-mode.active { color: #172033; background: #e6c200 !important; border-color: #c29d00 !important; }
+        .light #settings-page-workspace .bg-slate-900\/50 { background: #ffffff !important; }
+        .light .bg-glow-layer { opacity: .7; }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-main);
@@ -382,7 +405,7 @@
             </section>
         </div>
 
-        <div id="lending-modal" class="hidden fixed inset-0 z-50 bg-black/70 p-4 overflow-y-auto"><div class="max-w-xl mx-auto mt-10 p-6 rounded-2xl border border-amber-500/20 bg-[#111827] shadow-2xl"><div class="flex items-start justify-between mb-5"><div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Peer-to-Peer</p><h2 class="text-2xl font-bold mt-1">Log Friend IOU</h2></div><button type="button" class="modal-close-btn text-slate-400" data-modal="lending-modal" aria-label="Close lending form">✕</button></div><form id="lending-form" class="space-y-4"><div><label for="lending-type" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Direction</label><select id="lending-type" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><option value="lent">I lent money</option><option value="borrowed">I borrowed money</option></select></div><div><label for="lending-person" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Friend Name</label><input id="lending-person" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100" placeholder="e.g. Aisha"></div><div class="grid grid-cols-2 gap-3"><div><label for="lending-amount" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Initial Amount</label><input id="lending-amount" required type="number" min="0.01" step="0.01" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div><div><label for="lending-date" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Log Date</label><input id="lending-date" required type="date" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div></div><div class="flex justify-end"><button type="submit" class="px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Save IOU</button></div></form></div></div>
+        <div id="lending-modal" class="hidden fixed inset-0 z-50 bg-black/70 p-4 overflow-y-auto"><div class="max-w-xl mx-auto mt-10 p-6 rounded-2xl border border-amber-500/20 bg-[#111827] shadow-2xl"><div class="flex items-start justify-between mb-5"><div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Peer-to-Peer</p><h2 class="text-2xl font-bold mt-1">Log Friend IOU</h2></div><button type="button" class="modal-close-btn text-slate-400" data-modal="lending-modal" aria-label="Close lending form">✕</button></div><form id="lending-form" class="space-y-4"><div><label for="lending-type" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Direction</label><select id="lending-type" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><option value="lent">I lent money</option><option value="borrowed">I borrowed money</option></select></div><div><label for="lending-person" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Friend Name</label><input id="lending-person" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100" placeholder="Enter friend name"></div><div class="grid grid-cols-2 gap-3"><div><label for="lending-amount" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Initial Amount</label><input id="lending-amount" required type="number" min="0.01" step="0.01" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div><div><label for="lending-date" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Log Date</label><input id="lending-date" required type="date" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div></div><div class="flex justify-end"><button type="submit" class="px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Save IOU</button></div></form></div></div>
 
         <div id="settle-interactive-modal" class="hidden fixed inset-0 z-50 bg-black/70 p-4"><div class="max-w-md mx-auto mt-24 p-6 rounded-2xl border border-amber-500/20 bg-[#111827] shadow-2xl"><div class="flex justify-between"><h2 class="text-xl font-bold">Record Repayment</h2><button type="button" id="close-settle-modal" class="text-slate-400" aria-label="Close repayment form">✕</button></div><p id="settle-modal-subtitle" class="text-xs text-slate-400 mt-2"></p><form id="settle-interactive-form" class="space-y-4 mt-5"><input id="settle-debt-id" type="hidden"><input id="settle-amount" required type="number" min="0.01" step="0.01" placeholder="Amount paid" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><input id="settle-date" required type="date" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><p id="settle-error-alert" class="hidden text-xs text-rose-400"></p><button type="submit" class="w-full py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Apply Repayment</button></form></div></div>
 
