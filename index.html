@@ -1678,7 +1678,9 @@
                 document.querySelectorAll('.side-nav-item[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===route));
                 if(push) history.pushState({},'',route);
                 document.getElementById('app-sidebar')?.classList.remove('open');
+                document.getElementById('sidebar-overlay')?.classList.add('hidden');
                 document.getElementById('sidebar-overlay')?.classList.remove('visible');
+                document.getElementById('mobile-nav-toggle')?.setAttribute('aria-expanded', 'false');
                 if(route==='/statistics') setTimeout(renderStatistics,0);
                 if(route==='/categories') renderCategoryPages();
             }
@@ -1688,8 +1690,19 @@
                 const menuToggle = document.getElementById('mobile-nav-toggle');
                 const sidebar = document.getElementById('app-sidebar');
                 const overlay = document.getElementById('sidebar-overlay');
-                const closeSidebar = () => { sidebar?.classList.remove('open'); overlay?.classList.remove('visible'); menuToggle?.setAttribute('aria-expanded', 'false'); menuToggle?.setAttribute('aria-label', 'Open navigation'); };
-                menuToggle?.addEventListener('click', () => { const isOpen = sidebar?.classList.toggle('open'); overlay?.classList.toggle('visible', Boolean(isOpen)); menuToggle.setAttribute('aria-expanded', String(Boolean(isOpen))); menuToggle.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation'); });
+                const setSidebarState = (isOpen) => {
+                    if (!sidebar || !overlay || !menuToggle) return;
+                    sidebar.classList.toggle('open', isOpen);
+                    overlay.classList.toggle('hidden', !isOpen);
+                    overlay.classList.toggle('visible', isOpen);
+                    menuToggle.setAttribute('aria-expanded', String(isOpen));
+                    menuToggle.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
+                };
+                const closeSidebar = () => setSidebarState(false);
+                menuToggle?.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    setSidebarState(!sidebar.classList.contains('open'));
+                });
                 overlay?.addEventListener('click', closeSidebar);
                 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSidebar(); });
                 window.addEventListener('popstate',()=>navigate(location.pathname,false));
