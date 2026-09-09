@@ -256,6 +256,9 @@
             transform: translateX(0) !important;
         }
 
+        #app-sidebar[data-sidebar-open="false"] { transform: translateX(-100%) !important; }
+        #app-sidebar[data-sidebar-open="true"] { transform: translateX(0) !important; }
+
         #sidebar-overlay.visible {
             display: block !important;
         }
@@ -272,12 +275,6 @@
 
         .interactive-card {
             color: var(--fatimid-navy-1);
-        }
-
-        @media (min-width: 1024px) {
-            #app-sidebar {
-                transform: translateX(0) !important;
-            }
         }
 
         #settings-page-workspace { padding:2rem; max-width:1200px; margin:0 auto; }
@@ -458,7 +455,7 @@
         </div>
 
         <div id="main-app-workspace" class="hidden min-h-[calc(100vh-64px)]">
-            <aside id="app-sidebar" class="fixed left-0 top-16 bottom-0 z-30 w-64 -translate-x-full transition-transform duration-300 border-r border-slate-800/80 bg-[#0a0f1d]/95 backdrop-blur-xl" aria-label="Sidebar navigation">
+            <aside id="app-sidebar" data-sidebar-open="false" class="fixed left-0 top-16 bottom-0 z-30 w-64 -translate-x-full transition-transform duration-300 border-r border-slate-800/80 bg-[#0a0f1d]/95 backdrop-blur-xl" aria-label="Sidebar navigation" aria-hidden="true">
                 <div class="h-full flex flex-col p-4">
                     <div class="px-3 pt-2 pb-4"><p class="text-[10px] uppercase tracking-[0.22em] text-slate-500 font-bold">Workspace</p><p class="text-sm text-slate-300 mt-1">A clear view of your money</p></div>
                     <nav class="space-y-1.5" aria-label="Primary navigation">
@@ -1837,11 +1834,14 @@
                 document.getElementById('route-'+route.slice(1))?.classList.remove('hidden');
                 document.querySelectorAll('.side-nav-item[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===route));
                 if(push) history.pushState({},'',route);
-                document.getElementById('app-sidebar')?.classList.remove('open');
-                document.getElementById('app-sidebar')?.classList.remove('collapsed');
+                const sidebar = document.getElementById('app-sidebar');
+                const shouldCloseSidebar = window.innerWidth < 1024;
+                sidebar?.classList.toggle('open', !shouldCloseSidebar);
+                sidebar?.setAttribute('data-sidebar-open', String(!shouldCloseSidebar));
+                sidebar?.setAttribute('aria-hidden', String(shouldCloseSidebar));
                 document.getElementById('sidebar-overlay')?.classList.add('hidden');
                 document.getElementById('sidebar-overlay')?.classList.remove('visible');
-                document.getElementById('mobile-nav-toggle')?.setAttribute('aria-expanded', 'false');
+                document.getElementById('mobile-nav-toggle')?.setAttribute('aria-expanded', String(!shouldCloseSidebar));
                 if(route==='/statistics') setTimeout(renderStatistics,0);
                 if(route==='/categories') renderCategoryPages();
             }
@@ -1854,6 +1854,8 @@
                 const setSidebarState = (isOpen) => {
                     if (!sidebar || !overlay || !menuToggle) return;
                     sidebar.classList.toggle('open', isOpen);
+                    sidebar.setAttribute('data-sidebar-open', String(isOpen));
+                    sidebar.setAttribute('aria-hidden', String(!isOpen));
                     overlay.classList.toggle('hidden', !isOpen);
                     overlay.classList.toggle('visible', isOpen);
                     menuToggle.setAttribute('aria-expanded', String(isOpen));
@@ -1862,11 +1864,12 @@
                 const closeSidebar = () => setSidebarState(false);
                 menuToggle?.addEventListener('click', (event) => {
                     event.preventDefault();
-                    setSidebarState(!sidebar.classList.contains('open'));
+                    setSidebarState(sidebar.getAttribute('data-sidebar-open') !== 'true');
                 });
                 overlay?.addEventListener('click', closeSidebar);
                 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSidebar(); });
                 window.addEventListener('popstate',()=>navigate(location.pathname,false));
+                setSidebarState(window.innerWidth >= 1024);
                 document.querySelectorAll('.period-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.stats-date').forEach(i=>i.classList.toggle('hidden',btn.dataset.period!=='custom'));renderStatistics();}));
                 document.querySelectorAll('.chart-mode').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.chart-mode').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderStatistics();}));
                 document.querySelectorAll('.category-page-form').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();const type=form.dataset.type;const label=form.querySelector('[name=label]').value.trim();if(label&&!state.categories[type].includes(label)){state.categories[type].push(label);state.categoryMeta[label]={icon:form.querySelector('[name=icon]')?.value.trim() || '•',color:form.querySelector('[name=color]')?.value || '#D4AF37'};form.reset();renderCategoryPages();refreshSelectCategories();saveState();}}));
