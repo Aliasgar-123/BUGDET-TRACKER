@@ -362,6 +362,41 @@
         .dark .text-slate-600,
         .dark .text-slate-700 { color: #c5d1e2 !important; }
         .dark footer { background: #08162d !important; }
+
+        .route-page > :first-child,
+        #settings-page-workspace > :first-child { border-color: var(--bg-card-border); }
+        .route-page h1,
+        #settings-page-workspace h1 { color: var(--text-primary); letter-spacing: -0.02em; }
+        .route-page h2,
+        .route-page h3,
+        #settings-page-workspace h2,
+        #settings-page-workspace h3 { color: var(--text-primary); }
+        .route-page .interactive-card,
+        #settings-page-workspace .interactive-card { border-radius: 1rem; }
+        .route-page .period-btn,
+        .route-page .chart-mode { min-height: 40px; transition: background-color .2s ease, color .2s ease, border-color .2s ease, transform .2s ease; }
+        .route-page .period-btn:hover,
+        .route-page .chart-mode:hover { border-color: var(--accent-primary); transform: translateY(-1px); }
+        .route-page .period-btn.active,
+        .route-page .chart-mode.active { background: linear-gradient(135deg, var(--fatimid-navy-2), var(--fatimid-navy-3)); color: #ffffff; border-color: var(--accent-primary); }
+        .route-page #lending-modal-trigger-btn,
+        .route-page .category-page-form button { background: linear-gradient(135deg, var(--fatimid-navy-2), var(--fatimid-navy-3)) !important; color: #ffffff !important; border: 1px solid var(--accent-primary); box-shadow: 0 10px 20px rgba(12, 32, 65, .14); }
+        .route-page #lending-modal-trigger-btn:hover,
+        .route-page .category-page-form button:hover { transform: translateY(-1px); border-color: var(--accent-primary-hover); }
+        .route-page .category-page-form { padding: .85rem; border: 1px solid var(--bg-card-border); border-radius: .9rem; background: var(--bg-panel-soft); }
+        .route-page .category-page-form input[type="color"] { min-width: 48px; padding: .25rem; }
+        #settings-page-workspace { color: var(--text-primary); }
+        #settings-page-workspace .grid > .interactive-card { min-height: 255px; }
+        #settings-page-workspace .interactive-card button { transition: transform .2s ease, border-color .2s ease, background-color .2s ease; }
+        #settings-page-workspace .interactive-card button:hover { transform: translateY(-1px); border-color: var(--accent-primary); }
+        .dark .route-page .category-page-form { background: rgba(8, 22, 45, .42); }
+        .light .route-page .category-page-form { background: rgba(247, 249, 252, .9); }
+
+        @media (max-width: 640px) {
+            #settings-page-workspace { padding: 1.25rem; }
+            .route-page .category-page-form { grid-template-columns: minmax(0, 1fr) 42px 42px; }
+            .route-page .category-page-form button { grid-column: 1 / -1; min-height: 42px; }
+        }
     </style>
     <script>
         tailwind.config = {
