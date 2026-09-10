@@ -392,8 +392,29 @@
         .dark .route-page .category-page-form { background: rgba(8, 22, 45, .42); }
         .light .route-page .category-page-form { background: rgba(247, 249, 252, .9); }
 
+        #route-lending-hub .lending-page-header { margin-bottom: 1.75rem; }
+        #route-lending-hub .lending-page-header h1 { font-size: clamp(2rem, 4vw, 2.7rem); }
+        #route-lending-hub .lending-action { min-height: 44px; white-space: nowrap; }
+        #route-lending-hub .lending-stat-grid { margin-bottom: 1.75rem; }
+        #route-lending-hub .lending-stat { min-height: 132px; display: flex; flex-direction: column; justify-content: center; }
+        #route-lending-hub .lending-stat > span { color: #a9bad5 !important; font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+        #route-lending-hub .lending-stat strong { font-size: 1.85rem; }
+        #route-lending-hub .lending-columns { align-items: stretch; }
+        #route-lending-hub .lending-list-card { min-height: 260px; }
+        #route-lending-hub .lending-list-card > .lending-card-heading,
+        #route-lending-hub .lending-history-card > .lending-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: -1.5rem -1.5rem 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--fatimid-border); background: linear-gradient(135deg, var(--fatimid-navy-2), var(--fatimid-navy-3)); color: #ffffff; }
+        #route-lending-hub .lending-card-heading h2 { color: #ffffff !important; margin: 0; }
+        #route-lending-hub .lending-card-heading span { color: #dce7f7; font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+        #route-lending-hub .lending-list-card .space-y-3 > div { background: rgba(8, 22, 45, .58); border-color: rgba(197, 157, 69, .2); }
+        #route-lending-hub .lending-list-card .space-y-3 > div:hover { border-color: rgba(197, 157, 69, .55); }
+        #route-lending-hub .lending-history-card { margin-top: 1.75rem; }
+        #route-lending-hub .lending-history-card #lending-history-list > div { border-color: rgba(148, 163, 184, .14); }
+        .light #route-lending-hub .lending-list-card .space-y-3 > div { background: rgba(247, 249, 252, .86); }
+        .light #route-lending-hub .lending-stat > span { color: var(--text-muted) !important; }
+
         @media (max-width: 640px) {
             #settings-page-workspace { padding: 1.25rem; }
+            #route-lending-hub .lending-action { width: 100%; }
             .route-page .category-page-form { grid-template-columns: minmax(0, 1fr) 42px 42px; }
             .route-page .category-page-form button { grid-column: 1 / -1; min-height: 42px; }
         }
@@ -550,9 +571,9 @@
                 </div>
 
                 <div id="route-lending-hub" class="route-page hidden">
-                    <div class="mb-7 flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Peer-to-Peer</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Lending Hub</h1><p class="text-sm text-slate-400 mt-2">Track lent money, borrowed money and repayments.</p></div><button id="lending-modal-trigger-btn" class="px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">+ Log Friend IOU</button></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6"><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Total Lent Outstanding</span><strong id="hub-total-lent" class="block text-3xl mt-2 text-emerald-400">₹0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Total Borrowed Outstanding</span><strong id="hub-total-borrowed" class="block text-3xl mt-2 text-rose-400">₹0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Active Agreements</span><strong id="hub-active-count" class="block text-3xl mt-2 text-amber-300">0</strong></div></div>
-                    <div id="view-lending" class="tab-pane block"><div class="space-y-5"><div class="p-6 rounded-2xl border interactive-card"><h2 class="text-lg font-bold text-emerald-400 mb-4">Cash Lent to Friends</h2><div id="lent-list-container" class="space-y-3"></div></div><div class="p-6 rounded-2xl border interactive-card"><h2 class="text-lg font-bold text-rose-400 mb-4">Money Borrowed from Friends</h2><div id="borrowed-list-container" class="space-y-3"></div></div></div><div class="p-6 rounded-2xl border interactive-card mt-5"><h2 class="text-lg font-bold mb-4">Transaction History</h2><div id="lending-history-list" class="space-y-2"></div></div></div>
+                    <div class="lending-page-header flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Peer-to-Peer</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Lending Hub</h1><p class="text-sm text-slate-400 mt-2">Track lent money, borrowed money and repayments.</p></div><button id="lending-modal-trigger-btn" class="lending-action px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">+ Log Friend IOU</button></div>
+                    <div class="lending-stat-grid grid grid-cols-1 md:grid-cols-3 gap-5"><div class="lending-stat p-6 rounded-2xl border interactive-card"><span>Total Lent Outstanding</span><strong id="hub-total-lent" class="block text-3xl mt-2 text-emerald-400">₹0.00</strong><small class="mt-2 text-xs text-slate-500">Money friends owe you</small></div><div class="lending-stat p-6 rounded-2xl border interactive-card"><span>Total Borrowed Outstanding</span><strong id="hub-total-borrowed" class="block text-3xl mt-2 text-rose-400">₹0.00</strong><small class="mt-2 text-xs text-slate-500">Money you need to repay</small></div><div class="lending-stat p-6 rounded-2xl border interactive-card"><span>Active Agreements</span><strong id="hub-active-count" class="block text-3xl mt-2 text-amber-300">0</strong><small class="mt-2 text-xs text-slate-500">Open peer-to-peer records</small></div></div>
+                    <div id="view-lending" class="tab-pane block"><div class="lending-columns grid grid-cols-1 xl:grid-cols-2 gap-5"><div class="lending-list-card p-6 rounded-2xl border interactive-card"><div class="lending-card-heading"><h2 class="text-lg font-bold">Cash Lent to Friends</h2><span>Receivables</span></div><div id="lent-list-container" class="space-y-3"></div></div><div class="lending-list-card p-6 rounded-2xl border interactive-card"><div class="lending-card-heading"><h2 class="text-lg font-bold">Money Borrowed from Friends</h2><span>Payables</span></div><div id="borrowed-list-container" class="space-y-3"></div></div></div><div class="lending-history-card p-6 rounded-2xl border interactive-card"><div class="lending-card-heading"><h2 class="text-lg font-bold">Transaction History</h2><span>Recent activity</span></div><div id="lending-history-list" class="space-y-2"></div></div></div>
                 </div>
 
                 <div id="route-statistics" class="route-page hidden">
