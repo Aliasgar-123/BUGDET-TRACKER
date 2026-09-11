@@ -412,9 +412,33 @@
         .light #route-lending-hub .lending-list-card .space-y-3 > div { background: rgba(247, 249, 252, .86); }
         .light #route-lending-hub .lending-stat > span { color: var(--text-muted) !important; }
 
+        #route-statistics .statistics-page-header { margin-bottom: 1.75rem; }
+        #route-statistics .statistics-page-header h1 { font-size: clamp(2rem, 4vw, 2.7rem); }
+        #route-statistics .statistics-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.75rem; padding: .85rem 1rem; border: 1px solid var(--bg-card-border); border-radius: .9rem; background: var(--bg-panel-soft); }
+        #route-statistics .statistics-periods,
+        #route-statistics .statistics-chart-modes { display: flex; flex-wrap: wrap; gap: .5rem; }
+        #route-statistics .statistics-date { min-height: 40px; }
+        #route-statistics .statistics-stat-grid { margin-bottom: 1.75rem; }
+        #route-statistics .statistics-stat { min-height: 132px; display: flex; flex-direction: column; justify-content: center; }
+        #route-statistics .statistics-stat > span { color: #a9bad5 !important; font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+        #route-statistics .statistics-stat strong { font-size: 1.85rem; }
+        #route-statistics .statistics-panel-grid { align-items: stretch; }
+        #route-statistics .statistics-panel { min-height: 420px; }
+        #route-statistics .statistics-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: -1.5rem -1.5rem 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--fatimid-border); background: linear-gradient(135deg, var(--fatimid-navy-2), var(--fatimid-navy-3)); color: #ffffff; }
+        #route-statistics .statistics-card-heading h2 { color: #ffffff !important; margin: 0; }
+        #route-statistics .statistics-card-heading span { color: #dce7f7; font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+        #route-statistics .statistics-chart-wrap { height: 360px; }
+        .light #route-statistics .statistics-toolbar { background: rgba(247, 249, 252, .9); }
+        .light #route-statistics .statistics-stat > span { color: var(--text-muted) !important; }
+
         @media (max-width: 640px) {
             #settings-page-workspace { padding: 1.25rem; }
             #route-lending-hub .lending-action { width: 100%; }
+            #route-statistics .statistics-toolbar { align-items: stretch; flex-direction: column; }
+            #route-statistics .statistics-periods,
+            #route-statistics .statistics-chart-modes { width: 100%; }
+            #route-statistics .statistics-periods .period-btn,
+            #route-statistics .statistics-chart-modes .chart-mode { flex: 1 1 auto; }
             .route-page .category-page-form { grid-template-columns: minmax(0, 1fr) 42px 42px; }
             .route-page .category-page-form button { grid-column: 1 / -1; min-height: 42px; }
         }
@@ -577,10 +601,10 @@
                 </div>
 
                 <div id="route-statistics" class="route-page hidden">
-                    <div class="mb-7"><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Insights</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Statistics & Analysis</h1><p class="text-sm text-slate-400 mt-2">Compare periods and understand where your money goes.</p></div>
-                    <div class="flex flex-wrap gap-2 mb-5"><button class="period-btn active" data-period="weekly">Weekly</button><button class="period-btn" data-period="monthly">Monthly</button><button class="period-btn" data-period="yearly">Yearly</button><button class="period-btn" data-period="custom">Custom Range</button><input id="stats-start" type="date" class="stats-date hidden"><input id="stats-end" type="date" class="stats-date hidden"></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6"><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Current Period</span><strong id="stats-current" class="block text-2xl mt-2">₹0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Previous Period</span><strong id="stats-previous" class="block text-2xl mt-2">₹0.00</strong></div><div class="p-6 rounded-2xl border interactive-card"><span class="text-xs text-slate-500">Change</span><strong id="stats-change" class="block text-2xl mt-2 text-amber-300">0%</strong></div></div>
-                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5"><div class="xl:col-span-2 p-6 rounded-2xl border interactive-card"><div class="flex items-center justify-between mb-5"><h2 class="text-lg font-bold">Cash Flow Trend</h2><div class="flex gap-1"><button class="chart-mode active" data-chart="bar">Bar</button><button class="chart-mode" data-chart="line">Line</button><button class="chart-mode" data-chart="area">Area</button><button class="chart-mode" data-chart="doughnut">Donut</button></div></div><div class="h-[360px]"><canvas id="statisticsChart"></canvas></div></div><div class="p-6 rounded-2xl border interactive-card"><h2 class="text-lg font-bold mb-4">Category Breakdown</h2><div id="analytics-breakdown-list" class="space-y-3"></div></div></div>
+                    <div class="statistics-page-header"><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Insights</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Statistics & Analysis</h1><p class="text-sm text-slate-400 mt-2">Compare periods and understand where your money goes.</p></div>
+                    <div class="statistics-toolbar"><div class="statistics-periods"><button class="period-btn active" data-period="weekly">Weekly</button><button class="period-btn" data-period="monthly">Monthly</button><button class="period-btn" data-period="yearly">Yearly</button><button class="period-btn" data-period="custom">Custom Range</button></div><div class="statistics-dates flex flex-wrap gap-2"><input id="stats-start" type="date" class="stats-date statistics-date hidden"><input id="stats-end" type="date" class="stats-date statistics-date hidden"></div></div>
+                    <div class="statistics-stat-grid grid grid-cols-1 md:grid-cols-3 gap-5"><div class="statistics-stat p-6 rounded-2xl border interactive-card"><span>Current Period</span><strong id="stats-current" class="block text-2xl mt-2 text-emerald-400">₹0.00</strong><small class="mt-2 text-xs text-slate-500">Total spending in the selected period</small></div><div class="statistics-stat p-6 rounded-2xl border interactive-card"><span>Previous Period</span><strong id="stats-previous" class="block text-2xl mt-2 text-rose-400">₹0.00</strong><small class="mt-2 text-xs text-slate-500">Comparable earlier period</small></div><div class="statistics-stat p-6 rounded-2xl border interactive-card"><span>Change</span><strong id="stats-change" class="block text-2xl mt-2 text-amber-300">0%</strong><small class="mt-2 text-xs text-slate-500">Difference from the previous period</small></div></div>
+                    <div class="statistics-panel-grid grid grid-cols-1 xl:grid-cols-3 gap-5"><div class="statistics-panel p-6 rounded-2xl border interactive-card xl:col-span-2"><div class="statistics-card-heading"><h2 class="text-lg font-bold">Cash Flow Trend</h2><div class="statistics-chart-modes"><button class="chart-mode active" data-chart="bar">Bar</button><button class="chart-mode" data-chart="line">Line</button><button class="chart-mode" data-chart="area">Area</button><button class="chart-mode" data-chart="doughnut">Donut</button></div></div><div class="statistics-chart-wrap"><canvas id="statisticsChart"></canvas></div></div><div class="statistics-panel p-6 rounded-2xl border interactive-card"><div class="statistics-card-heading"><h2 class="text-lg font-bold">Category Breakdown</h2><span>By category</span></div><div id="analytics-breakdown-list" class="space-y-3"></div></div></div>
                     <div id="view-analytics" class="hidden"><canvas id="analyticsChart"></canvas></div>
                 </div>
 
