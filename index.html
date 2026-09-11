@@ -164,8 +164,11 @@
             color: rgba(255,255,255,0.8); font-size:.84rem; font-weight:700; text-align:left; transition:.2s ease;
             border: 1px solid transparent;
         }
-        .side-nav-item:hover { color:#fff; background: rgba(197, 157, 69, 0.08); }
+        .side-nav-item > span:first-child { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: .6rem; color: #f4c96b; background: rgba(197, 157, 69, .1); font-size: 1rem; transition: transform .2s ease, background-color .2s ease, color .2s ease; }
+        .side-nav-item:hover { color:#fff; background: linear-gradient(90deg, rgba(197, 157, 69, 0.16), rgba(34, 88, 151, 0.12)); border-color: rgba(197, 157, 69, .28); transform: translateX(3px); }
+        .side-nav-item:hover > span:first-child { color: var(--fatimid-navy-1); background: var(--fatimid-gold); transform: scale(1.06); }
         .side-nav-item.active { color: var(--fatimid-gold); background: linear-gradient(90deg, rgba(197, 157, 69, 0.14), rgba(34, 88, 151, 0.08)); border-color: rgba(197, 157, 69, 0.24); box-shadow: inset 3px 0 0 var(--fatimid-gold); }
+        .side-nav-item.active > span:first-child { color: var(--fatimid-navy-1); background: var(--fatimid-gold); }
 
         .metric-pill {
             padding: .25rem .55rem; border-radius: 999px; font-size: .65rem; font-weight: 800; border: 1px solid;
@@ -285,6 +288,14 @@
         #app-sidebar .text-amber-300 {
             color: #f4c96b !important;
         }
+
+        #app-sidebar .sidebar-brand-panel { padding: .9rem; margin-bottom: 1.1rem; border: 1px solid rgba(197, 157, 69, .25); border-radius: 1rem; background: linear-gradient(135deg, rgba(16, 45, 92, .95), rgba(34, 88, 151, .72)); box-shadow: 0 10px 24px rgba(12, 32, 65, .2); }
+        #app-sidebar .sidebar-brand-mark { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid var(--fatimid-gold); border-radius: .7rem; background: rgba(197, 157, 69, .16); color: #ffffff; font-size: .65rem; font-weight: 900; letter-spacing: .02em; }
+        #app-sidebar .sidebar-brand-panel p { color: #dce7f7 !important; }
+        #app-sidebar .sidebar-section-label { padding: 0 .45rem; color: #9fb1cc !important; font-size: .62rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+        #app-sidebar .sidebar-premium-panel { border-color: rgba(197, 157, 69, .28); background: linear-gradient(135deg, rgba(197, 157, 69, .13), rgba(34, 88, 151, .16)); }
+        #app-sidebar .sidebar-premium-panel p:first-child { color: #f4c96b !important; }
+        #app-sidebar .sidebar-premium-panel p:last-child { color: #b9c8dc !important; }
 
         .interactive-card {
             color: var(--fatimid-navy-1);
@@ -569,7 +580,8 @@
         <div id="main-app-workspace" class="hidden min-h-[calc(100vh-64px)]">
             <aside id="app-sidebar" data-sidebar-open="false" class="fixed left-0 top-16 bottom-0 z-30 w-64 -translate-x-full transition-transform duration-300 border-r border-slate-800/80 bg-[#0a0f1d]/95 backdrop-blur-xl" aria-label="Sidebar navigation" aria-hidden="true">
                 <div class="h-full flex flex-col p-4">
-                    <div class="px-3 pt-2 pb-4"><p class="text-[10px] uppercase tracking-[0.22em] text-slate-500 font-bold">Workspace</p><p class="text-sm text-slate-300 mt-1">A clear view of your money</p></div>
+                    <div class="sidebar-brand-panel"><div class="flex items-center gap-3"><span class="sidebar-brand-mark">CF</span><div><p class="text-xs font-extrabold tracking-wide text-white">CoinFlow Workspace</p><p class="text-[11px] mt-1">Your money, in focus.</p></div></div></div>
+                    <p class="sidebar-section-label mb-2">Workspace</p>
                     <nav class="space-y-1.5" aria-label="Primary navigation">
                         <button class="side-nav-item active" data-route="/dashboard"><span>⌂</span><span>Dashboard</span></button>
                         <button class="side-nav-item" data-route="/lending-hub"><span>↔</span><span>Lending Hub</span></button>
@@ -577,7 +589,7 @@
                         <button class="side-nav-item" data-route="/categories"><span>◈</span><span>Categories Setup</span></button>
                     </nav>
                     <div class="mt-auto space-y-3">
-                        <div class="p-4 rounded-2xl border border-amber-500/10 bg-amber-500/5"><p class="text-xs font-bold text-amber-300">CoinFlow Premium</p><p class="text-[11px] text-slate-500 mt-1">Your data stays in sync.</p></div>
+                        <div class="sidebar-premium-panel p-4 rounded-2xl border"><p class="text-xs font-bold">CoinFlow Premium</p><p class="text-[11px] mt-1">Your data stays in sync.</p></div>
                         <button id="sidebar-settings" class="side-nav-item"><span>⚙</span><span>Settings</span></button>
                     </div>
                 </div>
