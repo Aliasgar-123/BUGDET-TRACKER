@@ -25,6 +25,7 @@
             --text-primary: #10213d;
             --text-secondary: #34557f;
             --text-muted: #61799b;
+            --text-description: #b9c8dc;
 
             --accent-income: #2f7d67;
             --accent-income-glow: rgba(47, 125, 103, 0.14);
@@ -57,6 +58,7 @@
             --text-primary: #10213d;
             --text-secondary: #34557f;
             --text-muted: #61799b;
+            --text-description: #34557f;
             --bg-page: #eef3f8;
             --bg-panel: rgba(255, 255, 255, 0.94);
             --bg-panel-soft: #f7f9fc;
@@ -395,6 +397,7 @@
         .route-page h3,
         #settings-page-workspace h2,
         #settings-page-workspace h3 { color: var(--text-primary); }
+        .route-page .page-description { color: var(--text-description) !important; }
         .route-page .interactive-card,
         #settings-page-workspace .interactive-card { border-radius: 1rem; }
         .route-page .period-btn,
@@ -599,7 +602,7 @@
             <section class="lg:ml-64 p-4 sm:p-6 lg:p-8 max-w-[1600px]">
                 <div id="route-dashboard" class="route-page">
                     <div class="mb-7 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                        <div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Overview</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Your Financial Dashboard</h1><p class="text-sm text-slate-400 mt-2">Wallet, cash flow and obligations at a glance.</p></div>
+                        <div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Overview</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Your Financial Dashboard</h1><p class="page-description text-sm text-slate-400 mt-2">Wallet, cash flow and obligations at a glance.</p></div>
                     </div>
 
                     <section id="hero-metrics-grid" class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
@@ -639,13 +642,13 @@
                 </div>
 
                 <div id="route-lending-hub" class="route-page hidden">
-                    <div class="lending-page-header flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Peer-to-Peer</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Lending Hub</h1><p class="text-sm text-slate-400 mt-2">Track lent money, borrowed money and repayments.</p></div><button id="lending-modal-trigger-btn" class="lending-action px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">+ Log Friend IOU</button></div>
+                    <div class="lending-page-header flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Peer-to-Peer</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Lending Hub</h1><p class="page-description text-sm text-slate-400 mt-2">Track lent money, borrowed money and repayments.</p></div><button id="lending-modal-trigger-btn" class="lending-action px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">+ Log Friend IOU</button></div>
                     <div class="lending-stat-grid grid grid-cols-1 md:grid-cols-3 gap-5"><div class="lending-stat p-6 rounded-2xl border interactive-card"><span>Total Lent Outstanding</span><strong id="hub-total-lent" class="block text-3xl mt-2 text-emerald-400">₹0.00</strong><small class="mt-2 text-xs text-slate-500">Money friends owe you</small></div><div class="lending-stat p-6 rounded-2xl border interactive-card"><span>Total Borrowed Outstanding</span><strong id="hub-total-borrowed" class="block text-3xl mt-2 text-rose-400">₹0.00</strong><small class="mt-2 text-xs text-slate-500">Money you need to repay</small></div><div class="lending-stat p-6 rounded-2xl border interactive-card"><span>Active Agreements</span><strong id="hub-active-count" class="block text-3xl mt-2 text-amber-300">0</strong><small class="mt-2 text-xs text-slate-500">Open peer-to-peer records</small></div></div>
                     <div id="view-lending" class="tab-pane block"><div class="lending-columns grid grid-cols-1 xl:grid-cols-2 gap-5"><div class="lending-list-card p-6 rounded-2xl border interactive-card"><div class="lending-card-heading"><h2 class="text-lg font-bold">Cash Lent to Friends</h2><span>Receivables</span></div><div id="lent-list-container" class="space-y-3"></div></div><div class="lending-list-card p-6 rounded-2xl border interactive-card"><div class="lending-card-heading"><h2 class="text-lg font-bold">Money Borrowed from Friends</h2><span>Payables</span></div><div id="borrowed-list-container" class="space-y-3"></div></div></div><div class="lending-history-card p-6 rounded-2xl border interactive-card"><div class="lending-card-heading"><h2 class="text-lg font-bold">Transaction History</h2><span>Recent activity</span></div><div id="lending-history-list" class="space-y-2"></div></div></div>
                 </div>
 
                 <div id="route-statistics" class="route-page hidden">
-                    <div class="statistics-page-header"><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Insights</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Statistics & Analysis</h1><p class="text-sm text-slate-400 mt-2">Compare periods and understand where your money goes.</p></div>
+                    <div class="statistics-page-header"><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Insights</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Statistics & Analysis</h1><p class="page-description text-sm text-slate-400 mt-2">Compare periods and understand where your money goes.</p></div>
                     <div class="statistics-toolbar"><div class="statistics-periods"><button class="period-btn active" data-period="weekly">Weekly</button><button class="period-btn" data-period="monthly">Monthly</button><button class="period-btn" data-period="yearly">Yearly</button><button class="period-btn" data-period="custom">Custom Range</button></div><div class="statistics-dates flex flex-wrap gap-2"><input id="stats-start" type="date" class="stats-date statistics-date hidden"><input id="stats-end" type="date" class="stats-date statistics-date hidden"></div></div>
                     <div class="statistics-stat-grid grid grid-cols-1 md:grid-cols-3 gap-5"><div class="statistics-stat p-6 rounded-2xl border interactive-card"><span>Current Period</span><strong id="stats-current" class="block text-2xl mt-2 text-emerald-400">₹0.00</strong><small class="mt-2 text-xs text-slate-500">Total spending in the selected period</small></div><div class="statistics-stat p-6 rounded-2xl border interactive-card"><span>Previous Period</span><strong id="stats-previous" class="block text-2xl mt-2 text-rose-400">₹0.00</strong><small class="mt-2 text-xs text-slate-500">Comparable earlier period</small></div><div class="statistics-stat p-6 rounded-2xl border interactive-card"><span>Change</span><strong id="stats-change" class="block text-2xl mt-2 text-amber-300">0%</strong><small class="mt-2 text-xs text-slate-500">Difference from the previous period</small></div></div>
                     <div class="statistics-panel-grid grid grid-cols-1 xl:grid-cols-3 gap-5"><div class="statistics-panel p-6 rounded-2xl border interactive-card xl:col-span-2"><div class="statistics-card-heading"><h2 class="text-lg font-bold">Cash Flow Trend</h2><div class="statistics-chart-modes"><button class="chart-mode active" data-chart="bar">Bar</button><button class="chart-mode" data-chart="line">Line</button><button class="chart-mode" data-chart="area">Area</button><button class="chart-mode" data-chart="doughnut">Donut</button></div></div><div class="statistics-chart-wrap"><canvas id="statisticsChart"></canvas></div></div><div class="statistics-panel p-6 rounded-2xl border interactive-card"><div class="statistics-card-heading"><h2 class="text-lg font-bold">Category Breakdown</h2><span>By category</span></div><div id="analytics-breakdown-list" class="space-y-3"></div></div></div>
@@ -653,7 +656,7 @@
                 </div>
 
                 <div id="route-categories" class="route-page hidden">
-                    <div class="mb-7"><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Workspace Configuration</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Categories Setup</h1><p class="text-sm text-slate-400 mt-2">Maintain the labels used by the cash log.</p></div>
+                    <div class="mb-7"><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Workspace Configuration</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Categories Setup</h1><p class="page-description text-sm text-slate-400 mt-2">Maintain the labels used by the cash log.</p></div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
                         <div class="p-6 rounded-2xl border interactive-card"><div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold text-emerald-400">Income Categories</h2><span class="metric-pill green">Credits</span></div><form class="category-page-form grid grid-cols-[1fr_48px_48px_auto] gap-2" data-type="income"><input name="label" required placeholder="Category name" class="px-3 py-2.5 rounded-xl border bg-slate-950 text-sm text-slate-100"><input name="icon" value="＋" maxlength="2" title="Icon" class="w-12 px-2 py-2.5 rounded-xl border bg-slate-950 text-center text-slate-100"><input name="color" type="color" value="#10B981" title="Color" class="w-12 h-11 rounded-xl border bg-slate-950 p-1"><button class="px-4 rounded-xl bg-emerald-500 text-slate-950 font-bold">Add</button></form><div id="page-income-categories" class="mt-4 space-y-2"></div></div>
                         <div class="p-6 rounded-2xl border interactive-card"><div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold text-rose-400">Expense Categories</h2><span class="metric-pill red">Debits</span></div><form class="category-page-form grid grid-cols-[1fr_48px_48px_auto] gap-2" data-type="expense"><input name="label" required placeholder="Category name" class="px-3 py-2.5 rounded-xl border bg-slate-950 text-sm text-slate-100"><input name="icon" value="−" maxlength="2" title="Icon" class="w-12 px-2 py-2.5 rounded-xl border bg-slate-950 text-center text-slate-100"><input name="color" type="color" value="#EF4444" title="Color" class="w-12 h-11 rounded-xl border bg-slate-950 p-1"><button class="px-4 rounded-xl bg-rose-500 text-white font-bold">Add</button></form><div id="page-expense-categories" class="mt-4 space-y-2"></div></div>
