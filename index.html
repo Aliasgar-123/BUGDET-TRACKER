@@ -1675,6 +1675,22 @@
                 const switchToSettingsView = () => {
                     homeWorkspace.classList.add('hidden');
                     settingsWorkspace.classList.remove('hidden');
+                    const sidebar = document.getElementById('app-sidebar');
+                    const overlay = document.getElementById('sidebar-overlay');
+                    if (sidebar) {
+                        sidebar.classList.remove('open');
+                        sidebar.setAttribute('data-sidebar-open', 'false');
+                        sidebar.setAttribute('aria-hidden', 'true');
+                    }
+                    if (overlay) {
+                        overlay.classList.add('hidden');
+                        overlay.classList.remove('visible');
+                    }
+                    const menuToggle = document.getElementById('mobile-nav-toggle');
+                    if (menuToggle) {
+                        menuToggle.setAttribute('aria-expanded', 'false');
+                        menuToggle.setAttribute('aria-label', 'Open navigation');
+                    }
                 };
 
                 document.getElementById('settings-page-trigger').addEventListener('click', switchToSettingsView);
@@ -1956,21 +1972,33 @@
             }
             function navigate(route, push=true) {
                 const valid=['/dashboard','/lending-hub','/statistics','/categories'];
-                if(!valid.includes(route)) route='/dashboard';
+                const normalizedRoute = (route === '/' ? '/dashboard' : (valid.includes(route) ? route : '/dashboard'));
                 document.querySelectorAll('.route-page').forEach(p=>p.classList.add('hidden'));
-                document.getElementById('route-'+route.slice(1))?.classList.remove('hidden');
-                document.querySelectorAll('.side-nav-item[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===route));
-                if(push) history.pushState({},'',route);
+                document.getElementById('route-'+normalizedRoute.slice(1))?.classList.remove('hidden');
+                document.querySelectorAll('.side-nav-item[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===normalizedRoute));
+                if(push) history.pushState({},'',normalizedRoute);
+
                 const sidebar = document.getElementById('app-sidebar');
+                const overlay = document.getElementById('sidebar-overlay');
+                const menuToggle = document.getElementById('mobile-nav-toggle');
                 const shouldCloseSidebar = window.innerWidth < 1024;
-                sidebar?.classList.toggle('open', !shouldCloseSidebar);
-                sidebar?.setAttribute('data-sidebar-open', String(!shouldCloseSidebar));
-                sidebar?.setAttribute('aria-hidden', String(shouldCloseSidebar));
-                document.getElementById('sidebar-overlay')?.classList.add('hidden');
-                document.getElementById('sidebar-overlay')?.classList.remove('visible');
-                document.getElementById('mobile-nav-toggle')?.setAttribute('aria-expanded', String(!shouldCloseSidebar));
-                if(route==='/statistics') setTimeout(renderStatistics,0);
-                if(route==='/categories') renderCategoryPages();
+
+                if (sidebar) {
+                    sidebar.classList.toggle('open', !shouldCloseSidebar);
+                    sidebar.setAttribute('data-sidebar-open', String(!shouldCloseSidebar));
+                    sidebar.setAttribute('aria-hidden', String(shouldCloseSidebar));
+                }
+                if (overlay) {
+                    overlay.classList.toggle('hidden', shouldCloseSidebar);
+                    overlay.classList.toggle('visible', !shouldCloseSidebar && !overlay.classList.contains('hidden'));
+                }
+                if (menuToggle) {
+                    menuToggle.setAttribute('aria-expanded', String(!shouldCloseSidebar));
+                    menuToggle.setAttribute('aria-label', shouldCloseSidebar ? 'Open navigation' : 'Close navigation');
+                }
+
+                if(normalizedRoute==='/statistics') setTimeout(renderStatistics,0);
+                if(normalizedRoute==='/categories') renderCategoryPages();
             }
             function setupPremiumNavigation() {
                 document.querySelectorAll('[data-route]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.route)));
@@ -1996,6 +2024,13 @@
                 overlay?.addEventListener('click', closeSidebar);
                 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSidebar(); });
                 window.addEventListener('popstate',()=>navigate(location.pathname,false));
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth >= 1024) {
+                        setSidebarState(true);
+                    } else {
+                        setSidebarState(false);
+                    }
+                });
                 setSidebarState(window.innerWidth >= 1024);
                 document.querySelectorAll('.period-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.stats-date').forEach(i=>i.classList.toggle('hidden',btn.dataset.period!=='custom'));renderStatistics();}));
                 document.querySelectorAll('.chart-mode').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.chart-mode').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderStatistics();}));
@@ -2003,7 +2038,7 @@
                 document.getElementById('page-income-categories')?.addEventListener('click',handleCategoryDelete);
                 document.getElementById('page-expense-categories')?.addEventListener('click',handleCategoryDelete);
                 document.getElementById('ledger-search')?.addEventListener('input',applyDashboardFilters);
-                navigate(location.pathname,false);
+                navigate(location.pathname || '/dashboard', false);
             }
             function handleCategoryDelete(e){
                 const editButton=e.target.closest('[data-cat-edit]');

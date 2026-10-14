@@ -1,5 +1,16 @@
 # BUGDET-TRACKER
 
+## Local Preview
+
+Install dependencies and start the local app:
+
+```sh
+npm install
+npm start
+```
+
+Open `http://localhost:54321`. The frontend and its client-side routes work without a local `.env` file. Sign-in and synced data still use the Supabase project configured in `index.html`.
+
 ## Local Backend Setup for Full Account Deletion
 
 This project now includes a small backend service that can securely delete a Supabase auth user and associated records.
@@ -11,15 +22,14 @@ This project now includes a small backend service that can securely delete a Sup
 
 ### Setup
 1. Copy `.env.example` to `.env`
-2. Fill in your Supabase settings:
+2. Set your Supabase server settings:
    - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-3. Run:
-   - `npm install`
-   - `npm start`
+   - `SUPABASE_SERVICE_ROLE_KEY` (the private service-role key, never the anon key)
+3. Run `npm start`
 
-The backend listens on port `54321` by default and exposes:
-- `POST /delete-user`
+The server listens on port `54321` by default and exposes:
+- `POST /api/delete-user`
+- `GET /api/health`
 
 ### How it works
 The frontend sends the current Supabase session token to the backend.
