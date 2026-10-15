@@ -403,6 +403,16 @@
         .route-page h3,
         #settings-page-workspace h2,
         #settings-page-workspace h3 { color: var(--text-primary); }
+        .dark #route-accounts *:not(button):not(input):not(select):not(option) { color: #c5d1e2 !important; }
+        .dark #route-accounts h1,
+        .dark #route-accounts h2,
+        .dark #route-accounts h3 { color: #edf3fb !important; }
+        .dark #route-accounts .text-amber-300,
+        .dark #route-accounts .text-amber-400 { color: #f4c96b !important; }
+        .dark #route-accounts .interactive-card { background: linear-gradient(180deg, rgba(20, 45, 83, 0.98), rgba(8, 22, 45, 0.98)) !important; }
+        .dark #route-accounts .delete-account-btn { color: #fecdd3 !important; background: rgba(190, 24, 93, .2) !important; border-color: rgba(251, 113, 133, .55) !important; }
+        .dark #route-accounts .delete-account-btn:hover:not(:disabled) { color: #ffffff !important; background: rgba(190, 24, 93, .55) !important; }
+        .dark #route-accounts .delete-account-btn:disabled { color: #c5d1e2 !important; background: rgba(71, 85, 105, .35) !important; border-color: rgba(148, 163, 184, .3) !important; }
         .route-page .page-description { color: var(--text-description) !important; }
         .route-page .interactive-card,
         #settings-page-workspace .interactive-card { border-radius: 1rem; }
@@ -596,6 +606,7 @@
                         <button class="side-nav-item" data-route="/lending-hub"><span>↔</span><span>Lending Hub</span></button>
                         <button class="side-nav-item" data-route="/statistics"><span>◒</span><span>Statistics & Analysis</span></button>
                         <button class="side-nav-item" data-route="/categories"><span>◈</span><span>Categories Setup</span></button>
+                        <button class="side-nav-item" data-route="/accounts"><span>▣</span><span>Accounts</span></button>
                     </nav>
                     <div class="mt-auto space-y-3">
                         <div class="sidebar-premium-panel p-4 rounded-2xl border"><p class="text-xs font-bold">CoinFlow Premium</p><p class="text-[11px] mt-1">Your data stays in sync.</p></div>
@@ -634,6 +645,7 @@
                             <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Transaction Type</label><div class="grid grid-cols-2 gap-2"><button type="button" id="type-btn-expense" class="py-3 text-sm font-bold rounded-lg text-rose-400 bg-rose-500/10 border border-rose-500/20">- Expense</button><button type="button" id="type-btn-income" class="py-3 text-sm font-bold rounded-lg text-slate-400 border border-slate-700">+ Income</button></div><input id="tx-type" type="hidden" value="expense"></div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label for="tx-date" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Date</label><input id="tx-date" type="date" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div><div><label for="tx-amount" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Amount (₹)</label><input id="tx-amount" type="number" min="0.01" step="0.01" required placeholder="0.00" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div></div>
                             <div><label for="tx-category" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Category</label><select id="tx-category" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></select></div>
+                            <div><label for="tx-account" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Account</label><select id="tx-account" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></select></div>
                             <div><label for="tx-description" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Description</label><input id="tx-description" type="text" placeholder="Add description (optional)" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div>
                             <div class="flex justify-end"><button type="submit" class="min-h-[44px] px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20">Save transaction</button></div>
                         </form>
@@ -669,12 +681,39 @@
                     </div>
                     <div class="p-5 rounded-2xl border border-amber-500/10 bg-amber-500/5 text-xs text-slate-400">Category changes are bound to the existing application state and refresh the Add Cash Log dropdown immediately.</div>
                 </div>
+
+                <div id="route-accounts" class="route-page hidden">
+                    <div class="mb-7"><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Savings Pocket</p><h1 class="text-3xl sm:text-4xl font-extrabold mt-1">Accounts</h1><p class="page-description text-sm text-slate-400 mt-2">Keep money in separate pockets and move it whenever you need.</p></div>
+                    <section class="p-6 rounded-2xl border interactive-card mb-6">
+                        <h2 class="text-lg font-bold mb-4">Create account</h2>
+                        <form id="account-create-form" class="flex flex-col sm:flex-row gap-3">
+                            <label class="sr-only" for="account-name">Account name</label>
+                            <input id="account-name" name="name" required maxlength="40" placeholder="e.g. Travel Fund" class="flex-1 px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100">
+                            <button type="submit" class="px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Create Account</button>
+                        </form>
+                    </section>
+                    <section class="mb-6"><h2 class="text-lg font-bold mb-4">Your accounts</h2><div id="accounts-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></section>
+                    <section class="p-6 rounded-2xl border interactive-card mb-6">
+                        <h2 class="text-lg font-bold mb-4">Transfer money</h2>
+                        <form id="account-transfer-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label for="transfer-from-account" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">From account</label><select id="transfer-from-account" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></select></div>
+                            <div><label for="transfer-to-account" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">To account</label><select id="transfer-to-account" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></select></div>
+                            <div><label for="transfer-amount" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Amount (₹)</label><input id="transfer-amount" required type="number" min="0.01" step="0.01" placeholder="0.00" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div>
+                            <div><label for="transfer-date" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Date</label><input id="transfer-date" required type="date" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div>
+                            <div class="md:col-span-2 flex justify-end"><button type="submit" class="px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Transfer Money</button></div>
+                        </form>
+                    </section>
+                    <section class="p-6 rounded-2xl border interactive-card">
+                        <h2 class="text-lg font-bold mb-3">Recent transfers</h2>
+                        <div id="account-transfer-history" class="space-y-2"></div>
+                    </section>
+                </div>
             </section>
         </div>
 
-        <div id="lending-modal" class="hidden fixed inset-0 z-50 bg-black/70 p-4 overflow-y-auto"><div class="max-w-xl mx-auto mt-10 p-6 rounded-2xl border border-amber-500/20 bg-[#111827] shadow-2xl"><div class="flex items-start justify-between mb-5"><div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Peer-to-Peer</p><h2 class="text-2xl font-bold mt-1">Log Friend IOU</h2></div><button type="button" class="modal-close-btn text-slate-400" data-modal="lending-modal" aria-label="Close lending form">✕</button></div><form id="lending-form" class="space-y-4"><div><label for="lending-type" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Direction</label><select id="lending-type" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><option value="lent">I lent money</option><option value="borrowed">I borrowed money</option></select></div><div><label for="lending-person" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Friend Name</label><input id="lending-person" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100" placeholder="e.g. Aliasgar"></div><div class="grid grid-cols-2 gap-3"><div><label for="lending-amount" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Initial Amount</label><input id="lending-amount" required type="number" min="0.01" step="0.01" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div><div><label for="lending-date" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Log Date</label><input id="lending-date" required type="date" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div></div><div class="flex justify-end"><button type="submit" class="px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Save IOU</button></div></form></div></div>
+        <div id="lending-modal" class="hidden fixed inset-0 z-50 bg-black/70 p-4 overflow-y-auto"><div class="max-w-xl mx-auto mt-10 p-6 rounded-2xl border border-amber-500/20 bg-[#111827] shadow-2xl"><div class="flex items-start justify-between mb-5"><div><p class="text-xs uppercase tracking-[0.2em] text-amber-400 font-bold">Peer-to-Peer</p><h2 class="text-2xl font-bold mt-1">Log Friend IOU</h2></div><button type="button" class="modal-close-btn text-slate-400" data-modal="lending-modal" aria-label="Close lending form">✕</button></div><form id="lending-form" class="space-y-4"><div><label for="lending-type" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Direction</label><select id="lending-type" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><option value="lent">I lent money</option><option value="borrowed">I borrowed money</option></select></div><div><label for="lending-account" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Account</label><select id="lending-account" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></select></div><div><label for="lending-person" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Friend Name</label><input id="lending-person" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100" placeholder="e.g. Aliasgar"></div><div class="grid grid-cols-2 gap-3"><div><label for="lending-amount" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Initial Amount</label><input id="lending-amount" required type="number" min="0.01" step="0.01" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div><div><label for="lending-date" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Log Date</label><input id="lending-date" required type="date" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></div></div><div class="flex justify-end"><button type="submit" class="px-5 py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Save IOU</button></div></form></div></div>
 
-        <div id="settle-interactive-modal" class="hidden fixed inset-0 z-50 bg-black/70 p-4"><div class="max-w-md mx-auto mt-24 p-6 rounded-2xl border border-amber-500/20 bg-[#111827] shadow-2xl"><div class="flex justify-between"><h2 class="text-xl font-bold">Record Repayment</h2><button type="button" id="close-settle-modal" class="text-slate-400" aria-label="Close repayment form">✕</button></div><p id="settle-modal-subtitle" class="text-xs text-slate-400 mt-2"></p><form id="settle-interactive-form" class="space-y-4 mt-5"><input id="settle-debt-id" type="hidden"><input id="settle-amount" required type="number" min="0.01" step="0.01" placeholder="Amount paid" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><input id="settle-date" required type="date" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><p id="settle-error-alert" class="hidden text-xs text-rose-400"></p><button type="submit" class="w-full py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Apply Repayment</button></form></div></div>
+        <div id="settle-interactive-modal" class="hidden fixed inset-0 z-50 bg-black/70 p-4"><div class="max-w-md mx-auto mt-24 p-6 rounded-2xl border border-amber-500/20 bg-[#111827] shadow-2xl"><div class="flex justify-between"><h2 class="text-xl font-bold">Record Repayment</h2><button type="button" id="close-settle-modal" class="text-slate-400" aria-label="Close repayment form">✕</button></div><p id="settle-modal-subtitle" class="text-xs text-slate-400 mt-2"></p><form id="settle-interactive-form" class="space-y-4 mt-5"><input id="settle-debt-id" type="hidden"><div><label for="settle-account" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Account</label><select id="settle-account" required class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"></select></div><input id="settle-amount" required type="number" min="0.01" step="0.01" placeholder="Amount paid" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><input id="settle-date" required type="date" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><p id="settle-error-alert" class="hidden text-xs text-rose-400"></p><button type="submit" class="w-full py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Apply Repayment</button></form></div></div>
 
         <div id="forgot-password-modal" class="hidden fixed inset-0 z-50 bg-black/70 p-4"><div class="max-w-md mx-auto mt-24 p-6 rounded-2xl border border-amber-500/20 bg-[#111827] shadow-2xl"><div class="flex justify-between"><h2 class="text-xl font-bold">Reset Password</h2><button type="button" id="close-forgot-modal" class="text-slate-400" aria-label="Close password reset">✕</button></div><form id="forgot-password-form" class="space-y-4 mt-5"><input id="forgot-email" required type="email" placeholder="you@example.com" class="w-full px-3 py-3 rounded-xl border bg-slate-950 text-sm text-slate-100"><p id="forgot-password-error" class="hidden text-xs text-rose-400"></p><p id="forgot-password-success" class="hidden text-xs text-emerald-400"></p><button type="submit" class="w-full py-3 rounded-xl bg-amber-500 text-slate-950 font-extrabold">Send Reset Link</button></form></div></div>
 
@@ -1188,6 +1227,8 @@
             let state = {
                 transactions: [],
                 debts: [], 
+                accounts: null,
+                accountTransfers: [],
                 theme: 'dark',
                 categories: {
                     expense: ["Food & Canteen", "Dorm & Rent", "Books & Studies", "Entertainment & Fun"],
@@ -1209,6 +1250,65 @@
                 return `₹${Number(amount || 0).toFixed(2)}`;
             }
 
+            function ensureAccountState() {
+                if (!Array.isArray(state.transactions)) state.transactions = [];
+                if (!Array.isArray(state.accounts) || state.accounts.length === 0) {
+                    state.accounts = [
+                        { id: 'savings', name: 'Savings' },
+                        { id: 'monthly-usage', name: 'Monthly Usage' }
+                    ];
+                }
+                state.accounts = state.accounts.filter(account => account && typeof account.id === 'string' && typeof account.name === 'string');
+                if (state.accounts.length === 0) {
+                    state.accounts = [
+                        { id: 'savings', name: 'Savings' },
+                        { id: 'monthly-usage', name: 'Monthly Usage' }
+                    ];
+                }
+                if (!Array.isArray(state.accountTransfers)) state.accountTransfers = [];
+
+                const defaultAccountId = state.accounts.find(account => account.id === 'savings')?.id || state.accounts[0].id;
+                state.transactions.forEach(transaction => {
+                    if (!transaction.accountId) {
+                        transaction.accountId = defaultAccountId;
+                    }
+                });
+            }
+
+            function getAccountBalance(accountId) {
+                const transactionBalance = state.transactions.reduce((balance, transaction) => {
+                    if (transaction.accountId !== accountId) return balance;
+                    const amount = Number(transaction.amount) || 0;
+                    return balance + (transaction.type === 'income' ? amount : -amount);
+                }, 0);
+                const balance = state.accountTransfers.reduce((total, transfer) => {
+                    if (transfer.fromAccountId === accountId) return total - Number(transfer.amount || 0);
+                    if (transfer.toAccountId === accountId) return total + Number(transfer.amount || 0);
+                    return total;
+                }, transactionBalance);
+                return Math.round(balance * 100) / 100;
+            }
+
+            function getAccountName(accountId) {
+                return state.accounts.find(account => account.id === accountId)?.name || 'Unknown account';
+            }
+
+            function getDefaultAccountId() {
+                return state.accounts.find(account => account.id === 'savings')?.id || state.accounts[0]?.id;
+            }
+
+            function populateAccountOptions(select, excludedId = '') {
+                const selectedId = select.value;
+                select.replaceChildren();
+                state.accounts.filter(account => account.id !== excludedId).forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.id;
+                    option.textContent = `${account.name} (${formatCurrency(getAccountBalance(account.id))})`;
+                    select.appendChild(option);
+                });
+                if ([...select.options].some(option => option.value === selectedId)) select.value = selectedId;
+            }
+
             function loadState() {
                 const data = localStorage.getItem('coinflow_student_state');
                 if(data) {
@@ -1226,6 +1326,7 @@
                         if (!state.categoryMeta || typeof state.categoryMeta !== 'object') state.categoryMeta = {};
                     } catch(e) { console.error(e); }
                 }
+                ensureAccountState();
             }
 
             async function loadStateFromSupabase(user) {
@@ -1247,6 +1348,8 @@
                     state = {
                         ...state,
                         ...cloudState,
+                        accounts: Array.isArray(cloudState.accounts) ? cloudState.accounts : state.accounts,
+                        accountTransfers: Array.isArray(cloudState.accountTransfers) ? cloudState.accountTransfers : state.accountTransfers,
                         transactions: Array.isArray(cloudState.transactions) ? cloudState.transactions : state.transactions,
                         debts: Array.isArray(cloudState.debts) ? cloudState.debts : state.debts,
                         categories: cloudState.categories && typeof cloudState.categories === 'object' ? {
@@ -1257,10 +1360,14 @@
                         theme: cloudState.theme || state.theme
                     };
 
+                    ensureAccountState();
                     localStorage.setItem('coinflow_student_state', JSON.stringify(state));
                     initTheme();
                     renderApp();
                     refreshSelectCategories();
+                    persistStateToSupabase();
+                } else {
+                    persistStateToSupabase();
                 }
             }
 
@@ -1277,6 +1384,8 @@
                         data: {
                             transactions: state.transactions,
                             debts: state.debts,
+                            accounts: state.accounts,
+                            accountTransfers: state.accountTransfers,
                             categories: state.categories,
                             categoryMeta: state.categoryMeta,
                             theme: state.theme
@@ -1320,6 +1429,11 @@
                     opt.innerText = cat;
                     selectElement.appendChild(opt);
                 });
+
+                const accountSelect = document.getElementById('tx-account');
+                if (accountSelect) {
+                    populateAccountOptions(accountSelect);
+                }
             }
 
             function populateFilterDropdowns() {
@@ -1476,20 +1590,24 @@
                 if(tableBody) {
                     tableBody.innerHTML = '';
                     if(filteredTransactions.length === 0) {
-                        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-xs text-muted">No transactions found. ${filterState.type || filterState.category || filterState.month ? 'Try adjusting your filters.' : 'Use the Add Cash Log form above to start.'}</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-xs text-muted">No transactions found. ${filterState.type || filterState.category || filterState.month ? 'Try adjusting your filters.' : 'Use the Add Cash Log form above to start.'}</td></tr>`;
                     } else {
                         [...filteredTransactions].reverse().forEach(t => {
                             const tr = document.createElement('tr');
                             tr.className = "hover:bg-slate-900/60 transition-colors border-b border-slate-900/40";
                             tr.innerHTML = `
                                 <td class="py-3 text-left text-xs font-medium text-slate-400">${t.date || '—'}</td>
-                                <td class="py-3 px-2 text-left font-semibold text-slate-200">${t.description || 'No description'}</td>
+                                <td class="transaction-description-cell py-3 px-2 text-left"><span class="block font-semibold text-slate-200">${t.description || 'No description'}</span></td>
                                 <td class="py-3 px-2 text-left"><span class="px-2 py-0.5 rounded-full text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20">${t.category || 'General'}</span></td>
                                 <td class="py-3 px-2 text-center"><span class="type-badge ${t.type === 'income' ? 'income' : 'expense'}">${t.type === 'income' ? '+ INCOME' : '- EXPENSE'}</span></td>
                                 <td class="py-3 px-2 text-right font-bold financial-value ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}">${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}</td>
                                 <td class="py-3 text-center"><button class="min-h-[40px] px-3 text-rose-400 text-xs font-bold hover:underline delete-tx-btn" data-id="${t.id}">Delete</button>
                                 </td>
                             `;
+                            const accountLabel = document.createElement('span');
+                            accountLabel.className = 'mt-1 block text-[11px] font-medium text-slate-400';
+                            accountLabel.textContent = `${t.type === 'income' ? 'Credited to' : 'Debited from'}: ${getAccountName(t.accountId)}`;
+                            tr.querySelector('.transaction-description-cell').appendChild(accountLabel);
                             tableBody.appendChild(tr);
                         });
                     }
@@ -1581,6 +1699,8 @@
                 populateFilterDropdowns();
                 updatePremiumRouteWidgets();
                 renderCategoryPages();
+                renderAccountsPage();
+                refreshSelectCategories();
             }
 
             function updateChart() {
@@ -1711,6 +1831,7 @@
                     if(confirm("Are you sure you want to wipe clean all logged transaction rows, dynamic targets, and IOUs back to clean baseline parameters?")) {
                         state.transactions = [];
                         state.debts = [];
+                        state.accountTransfers = [];
                         saveState();
                         alert("Ledger data arrays cleared down securely.");
                         switchToHomeView();
@@ -1729,15 +1850,138 @@
                     });
                 });
 
+                document.getElementById('account-create-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const name = document.getElementById('account-name').value.trim();
+                    if (!name) return;
+                    if (state.accounts.some(account => account.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+                        alert('An account with that name already exists.');
+                        return;
+                    }
+                    state.accounts.push({
+                        id: crypto.randomUUID ? crypto.randomUUID() : `account-${Date.now()}`,
+                        name
+                    });
+                    this.reset();
+                    saveState();
+                });
+
+                document.getElementById('account-transfer-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const fromAccountId = document.getElementById('transfer-from-account').value;
+                    const toAccountId = document.getElementById('transfer-to-account').value;
+                    const amount = Number(document.getElementById('transfer-amount').value);
+                    const date = document.getElementById('transfer-date').value;
+                    if (fromAccountId === toAccountId || !state.accounts.some(account => account.id === fromAccountId) || !state.accounts.some(account => account.id === toAccountId)) {
+                        alert('Choose two different accounts for the transfer.');
+                        return;
+                    }
+                    if (!Number.isFinite(amount) || amount <= 0) {
+                        alert('Enter a transfer amount greater than ₹0.00.');
+                        return;
+                    }
+                    const available = getAccountBalance(fromAccountId);
+                    if (amount > available + 0.0001) {
+                        alert(`Insufficient funds in ${getAccountName(fromAccountId)}. Available: ${formatCurrency(available)}.`);
+                        return;
+                    }
+                    state.accountTransfers.push({
+                        id: crypto.randomUUID ? crypto.randomUUID() : `transfer-${Date.now()}`,
+                        fromAccountId,
+                        fromAccountName: getAccountName(fromAccountId),
+                        toAccountId,
+                        toAccountName: getAccountName(toAccountId),
+                        amount,
+                        date
+                    });
+                    this.reset();
+                    document.getElementById('transfer-date').valueAsDate = new Date();
+                    saveState();
+                });
+
+                document.getElementById('accounts-list').addEventListener('click', function(e) {
+                    const button = e.target.closest('.delete-account-btn');
+                    if (!button) return;
+                    const account = state.accounts.find(item => item.id === button.dataset.accountId);
+                    if (!account) return;
+                    if (state.accounts.length < 2) {
+                        alert('At least one account must remain.');
+                        return;
+                    }
+
+                    const balance = getAccountBalance(account.id);
+                    let transfer = null;
+                    if (Math.abs(balance) >= 0.005) {
+                        const destinationId = [...this.querySelectorAll('.account-delete-destination')]
+                            .find(select => select.dataset.accountId === account.id)?.value;
+                        const destination = state.accounts.find(item => item.id === destinationId);
+                        if (!destination) {
+                            alert('Choose another account to receive this balance before deleting.');
+                            return;
+                        }
+                        transfer = balance > 0
+                            ? {
+                                fromAccountId: account.id,
+                                fromAccountName: account.name,
+                                toAccountId: destination.id,
+                                toAccountName: destination.name,
+                                amount: balance
+                            }
+                            : {
+                                fromAccountId: destination.id,
+                                fromAccountName: destination.name,
+                                toAccountId: account.id,
+                                toAccountName: account.name,
+                                amount: Math.abs(balance)
+                            };
+                    }
+                    const prompt = transfer
+                        ? `Move ${formatCurrency(Math.abs(balance))} ${balance > 0 ? 'to' : 'from'} ${state.accounts.find(item => item.id === (balance > 0 ? transfer.toAccountId : transfer.fromAccountId)).name} and delete ${account.name}?`
+                        : `Delete the empty account "${account.name}"?`;
+                    if (!confirm(prompt)) return;
+                    if (transfer) {
+                        state.accountTransfers.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : `transfer-${Date.now()}`,
+                            ...transfer,
+                            date: new Date().toISOString().slice(0, 10)
+                        });
+                    }
+                    state.accounts = state.accounts.filter(item => item.id !== account.id);
+                    state.debts.forEach(debt => {
+                        if (debt.accountId === account.id) {
+                            debt.accountId = transfer
+                                ? (balance > 0 ? transfer.toAccountId : transfer.fromAccountId)
+                                : getDefaultAccountId();
+                        }
+                    });
+                    saveState();
+                });
+
                 document.getElementById('transaction-form').addEventListener('submit', function(e) {
                     e.preventDefault();
+                    const type = document.getElementById('tx-type').value;
+                    const accountId = document.getElementById('tx-account').value;
+                    const amount = Number(document.getElementById('tx-amount').value);
+                    if (!state.accounts.some(account => account.id === accountId)) {
+                        alert('Choose an account for this transaction.');
+                        return;
+                    }
+                    if (!Number.isFinite(amount) || amount <= 0) {
+                        alert('Enter an amount greater than ₹0.00.');
+                        return;
+                    }
+                    if (type === 'expense' && amount > getAccountBalance(accountId) + 0.0001) {
+                        alert(`Insufficient funds in ${getAccountName(accountId)}. Available: ${formatCurrency(getAccountBalance(accountId))}.`);
+                        return;
+                    }
                     const newTx = {
                         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-                        type: document.getElementById('tx-type').value,
+                        type,
                         date: document.getElementById('tx-date').value,
-                        amount: parseFloat(document.getElementById('tx-amount').value),
+                        amount,
                         category: document.getElementById('tx-category').value,
                         description: document.getElementById('tx-description').value,
+                        accountId,
                         isIOU: false
                     };
                     state.transactions.push(newTx);
@@ -1749,8 +1993,21 @@
 
                 document.getElementById('lending-form').addEventListener('submit', function(e) {
                     e.preventDefault();
-                    const initialAmt = parseFloat(document.getElementById('lending-amount').value);
+                    const initialAmt = Number(document.getElementById('lending-amount').value);
                     const isLent = document.getElementById('lending-type').value === 'lent';
+                    const accountId = document.getElementById('lending-account').value;
+                    if (!Number.isFinite(initialAmt) || initialAmt <= 0) {
+                        alert('Enter an amount greater than ₹0.00.');
+                        return;
+                    }
+                    if (!state.accounts.some(account => account.id === accountId)) {
+                        alert('Choose an account for this IOU.');
+                        return;
+                    }
+                    if (isLent && initialAmt > getAccountBalance(accountId) + 0.0001) {
+                        alert(`Insufficient funds in ${getAccountName(accountId)}. Available: ${formatCurrency(getAccountBalance(accountId))}.`);
+                        return;
+                    }
                     const newDebt = {
                         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
                         type: document.getElementById('lending-type').value,
@@ -1758,6 +2015,7 @@
                         amount: initialAmt,
                         remaining: initialAmt,
                         date: document.getElementById('lending-date').value,
+                        accountId,
                         settled: false
                     };
                     state.debts.push(newDebt);
@@ -1767,6 +2025,7 @@
                         type: isLent ? 'expense' : 'income',
                         date: newDebt.date,
                         amount: initialAmt,
+                        accountId: newDebt.accountId,
                         category: isLent ? 'Lent' : 'Borrowed',
                         isIOU: true,
                         description: isLent ? `Lent cash out to ${newDebt.person} 💸` : `Borrowed cash from ${newDebt.person} 🤝`
@@ -1813,6 +2072,8 @@
                     document.getElementById('settle-error-alert').classList.add('hidden');
                     
                     const rem = debtItem.remaining ?? debtItem.amount;
+                    populateAccountOptions(document.getElementById('settle-account'));
+                    document.getElementById('settle-account').value = debtItem.accountId || getDefaultAccountId();
                     document.getElementById('settle-modal-subtitle').innerText = `Target Friend: ${debtItem.person}. Outstanding Remainder: ${formatCurrency(rem)}`;
                     document.getElementById('settle-interactive-modal').classList.remove('hidden');
                 };
@@ -1829,6 +2090,7 @@
                     const targetId = document.getElementById('settle-debt-id').value;
                     const payAmt = parseFloat(document.getElementById('settle-amount').value);
                     const payDate = document.getElementById('settle-date').value;
+                    const accountId = document.getElementById('settle-account').value;
                     const errorContainer = document.getElementById('settle-error-alert');
 
                     const index = state.debts.findIndex(d => d.id === targetId);
@@ -1841,6 +2103,18 @@
                             return;
                         }
 
+                        const isLentDirection = state.debts[index].type === 'lent';
+                        if (!state.accounts.some(account => account.id === accountId)) {
+                            errorContainer.innerText = 'Choose an account for this repayment.';
+                            errorContainer.classList.remove('hidden');
+                            return;
+                        }
+                        if (!isLentDirection && payAmt > getAccountBalance(accountId) + 0.0001) {
+                            errorContainer.innerText = `Insufficient funds in ${getAccountName(accountId)}. Available: ${formatCurrency(getAccountBalance(accountId))}.`;
+                            errorContainer.classList.remove('hidden');
+                            return;
+                        }
+
                         errorContainer.classList.add('hidden');
                         let newRem = currentRem - payAmt;
                         if (newRem <= 0) {
@@ -1849,13 +2123,12 @@
                         }
                         state.debts[index].remaining = newRem;
 
-                        const isLentDirection = state.debts[index].type === 'lent';
-
                         state.transactions.push({
                             id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
                             type: isLentDirection ? 'income' : 'expense',
                             date: payDate,
                             amount: payAmt,
+                            accountId,
                             category: isLentDirection ? 'Received' : 'Paid',
                             isIOU: true,
                             description: isLentDirection ? `IOU Payback from ${state.debts[index].person}` : `Repaid back debt to ${state.debts[index].person}`
@@ -1931,6 +2204,101 @@
                     });
                 });
             }
+            function renderAccountsPage() {
+                const accountList = document.getElementById('accounts-list');
+                if (!accountList) return;
+                accountList.replaceChildren();
+
+                state.accounts.forEach(account => {
+                    const balance = getAccountBalance(account.id);
+                    const card = document.createElement('article');
+                    card.className = 'account-card interactive-card rounded-2xl border p-5';
+
+                    const title = document.createElement('h3');
+                    title.className = 'text-lg font-bold';
+                    title.textContent = account.name;
+                    const balanceLabel = document.createElement('p');
+                    balanceLabel.className = 'mt-2 text-2xl font-extrabold text-amber-300';
+                    balanceLabel.textContent = formatCurrency(balance);
+                    const balanceCaption = document.createElement('p');
+                    balanceCaption.className = 'mt-1 text-xs text-slate-400';
+                    balanceCaption.textContent = 'Available balance';
+                    card.append(title, balanceLabel, balanceCaption);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'mt-4 flex flex-col gap-2';
+                    if (state.accounts.length > 1 && Math.abs(balance) >= 0.005) {
+                        const transferLabel = document.createElement('label');
+                        transferLabel.className = 'text-xs font-bold text-slate-400';
+                        transferLabel.textContent = balance > 0 ? 'Move remaining money to' : 'Move this account deficit to';
+                        const destination = document.createElement('select');
+                        destination.className = 'account-delete-destination w-full px-3 py-2 rounded-xl border bg-slate-950 text-sm text-slate-100';
+                        destination.dataset.accountId = account.id;
+                        state.accounts.filter(other => other.id !== account.id).forEach(other => {
+                            const option = document.createElement('option');
+                            option.value = other.id;
+                            option.textContent = other.name;
+                            destination.appendChild(option);
+                        });
+                        actions.append(transferLabel, destination);
+                    }
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'delete-account-btn self-start rounded-xl border border-rose-500/30 px-4 py-2 text-sm font-bold text-rose-400';
+                    deleteButton.dataset.accountId = account.id;
+                    deleteButton.textContent = Math.abs(balance) < 0.005 ? 'Delete empty account' : 'Move balance & delete';
+                    deleteButton.disabled = state.accounts.length < 2;
+                    if (deleteButton.disabled) {
+                        deleteButton.title = 'At least one account must remain.';
+                        deleteButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    actions.appendChild(deleteButton);
+                    card.appendChild(actions);
+                    accountList.appendChild(card);
+                });
+
+                const fromSelect = document.getElementById('transfer-from-account');
+                const toSelect = document.getElementById('transfer-to-account');
+                if (fromSelect && toSelect) {
+                    populateAccountOptions(fromSelect);
+                    populateAccountOptions(toSelect, fromSelect.value);
+                    fromSelect.onchange = () => populateAccountOptions(toSelect, fromSelect.value);
+                }
+                populateAccountOptions(document.getElementById('lending-account'));
+                populateAccountOptions(document.getElementById('settle-account'));
+                const transferButton = document.querySelector('#account-transfer-form button[type="submit"]');
+                if (transferButton) {
+                    transferButton.disabled = state.accounts.length < 2;
+                    transferButton.title = transferButton.disabled ? 'Create another account before transferring.' : '';
+                    transferButton.classList.toggle('opacity-50', transferButton.disabled);
+                }
+
+                const history = document.getElementById('account-transfer-history');
+                if (history) {
+                    history.replaceChildren();
+                    if (state.accountTransfers.length === 0) {
+                        const empty = document.createElement('p');
+                        empty.className = 'text-sm text-slate-400';
+                        empty.textContent = 'No transfers yet.';
+                        history.appendChild(empty);
+                    } else {
+                        state.accountTransfers.slice().reverse().slice(0, 20).forEach(transfer => {
+                            const row = document.createElement('div');
+                            row.className = 'flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/50 py-3 text-sm';
+                            const description = document.createElement('span');
+                            const fromName = transfer.fromAccountName || getAccountName(transfer.fromAccountId);
+                            const toName = transfer.toAccountName || getAccountName(transfer.toAccountId);
+                            description.textContent = `${fromName} → ${toName} · ${transfer.date || '—'}`;
+                            const amount = document.createElement('strong');
+                            amount.className = 'text-amber-300';
+                            amount.textContent = formatCurrency(transfer.amount);
+                            row.append(description, amount);
+                            history.appendChild(row);
+                        });
+                    }
+                }
+            }
             function updatePremiumRouteWidgets() {
                 const lent = state.debts.filter(d => d.type === 'lent' && !d.settled);
                 const borrowed = state.debts.filter(d => d.type === 'borrowed' && !d.settled);
@@ -1981,7 +2349,7 @@
                 premiumChart=new Chart(canvas,{type:chartType,data:{labels,datasets:[{label:'Expenses',data:values,borderWidth:2,borderColor:'#D4AF37',backgroundColor:mode==='line'?'rgba(212,175,55,.12)':['#D4AF37','#E6C200','#10B981','#EF4444','#FFD700','#22C55E']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:chartType==='doughnut'?{}:{x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(148,163,184,.06)'}},y:{ticks:{color:'#94a3b8'},grid:{color:'rgba(148,163,184,.06)'}}}}});
             }
             function navigate(route, push=true) {
-                const valid=['/dashboard','/lending-hub','/statistics','/categories'];
+                const valid=['/dashboard','/lending-hub','/statistics','/categories','/accounts'];
                 const normalizedRoute = (route === '/' ? '/dashboard' : (valid.includes(route) ? route : '/dashboard'));
                 document.querySelectorAll('.route-page').forEach(p=>p.classList.add('hidden'));
                 document.getElementById('route-'+normalizedRoute.slice(1))?.classList.remove('hidden');
@@ -2009,6 +2377,7 @@
 
                 if(normalizedRoute==='/statistics') setTimeout(renderStatistics,0);
                 if(normalizedRoute==='/categories') renderCategoryPages();
+                if(normalizedRoute==='/accounts') renderAccountsPage();
             }
             function setupPremiumNavigation() {
                 document.querySelectorAll('[data-route]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.route)));
@@ -2101,7 +2470,9 @@
                 // Render app state
                 renderApp();
                 document.getElementById('tx-date')?.setAttribute('value', new Date().toISOString().slice(0, 10));
+                document.getElementById('transfer-date')?.setAttribute('value', new Date().toISOString().slice(0, 10));
                 refreshSelectCategories();
+                navigate(location.pathname, false);
 
                 // Setup auth state listener for subsequent changes
                 setupAuthStateListener();

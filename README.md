@@ -11,6 +11,12 @@ npm start
 
 Open `http://localhost:54321`. The frontend and its client-side routes work without a local `.env` file. Sign-in and synced data still use the Supabase project configured in `index.html`.
 
+## Savings Accounts
+
+The Accounts page starts with **Savings** and **Monthly Usage**. You can create additional accounts, select an account for income and expenses, transfer money between accounts, and delete an account only when it is empty or after moving its balance to another account. Expenses and transfers cannot exceed an account's available balance. Existing ledger transactions are assigned to Savings the first time account data is initialized.
+
+Account definitions and transfer history sync with each user's existing `user_data` row in Supabase, inside its `data` JSON field (`accounts` and `accountTransfers`). Edit the stored records in the [Supabase Table Editor](https://supabase.com/dashboard/project/tlzavimhqxyvsolrnxnc/editor) by opening the `user_data` table.
+
 ## Local Backend Setup for Full Account Deletion
 
 This project now includes a small backend service that can securely delete a Supabase auth user and associated records.
