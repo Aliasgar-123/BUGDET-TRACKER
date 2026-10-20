@@ -580,7 +580,7 @@
                 <p class="text-xs text-muted mt-2">Manage your college wallet limits and sync logs securely across all systems.</p>
             </div>
 
-            <div class="space-y-4">
+            <form id="auth-form" class="space-y-4" onsubmit="event.preventDefault(); handleAuthSubmit()">
                 <div id="profile-inputs" class="hidden space-y-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Full Name</label>
@@ -613,11 +613,11 @@
                     </div>
                 </div>
 
-                <button id="btn-primary-auth" onclick="handleAuthSubmit()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold text-sm shadow-md hover:from-amber-400 hover:to-yellow-400 transition-all">Sign In</button>
+                <button id="btn-primary-auth" type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold text-sm shadow-md hover:from-amber-400 hover:to-yellow-400 transition-all">Sign In</button>
                 
                 <p id="auth-toggle-text" class="text-xs text-center text-muted">Don't have an account? <a href="#" onclick="toggleAuthMode(true)" class="text-amber-400 hover:underline">Sign Up here</a></p>
                 <p id="forgot-password-link" class="text-xs text-center text-muted hidden"><a href="#" onclick="showForgotPasswordModal()" class="text-amber-400 hover:underline">Forgot Password?</a></p>
-            </div>
+            </form>
         </div>
 
 
@@ -638,6 +638,7 @@
                     <div class="mt-auto space-y-3">
                         <div class="sidebar-premium-panel p-4 rounded-2xl border"><p class="text-xs font-bold">CoinFlow Premium</p><p class="text-[11px] mt-1">Your data stays in sync.</p></div>
                         <button id="sidebar-settings" class="side-nav-item"><span>⚙</span><span>Settings</span></button>
+                        <button id="sidebar-signout" class="side-nav-item"><span>⇥</span><span>Sign Out</span></button>
                     </div>
                 </div>
             </aside>
@@ -2412,6 +2413,7 @@
             function setupPremiumNavigation() {
                 document.querySelectorAll('[data-route]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.route)));
                 document.getElementById('sidebar-settings')?.addEventListener('click',()=>document.getElementById('settings-page-trigger')?.click());
+                document.getElementById('sidebar-signout')?.addEventListener('click', signOut);
                 const menuToggle = document.getElementById('mobile-nav-toggle');
                 const sidebar = document.getElementById('app-sidebar');
                 const overlay = document.getElementById('sidebar-overlay');
