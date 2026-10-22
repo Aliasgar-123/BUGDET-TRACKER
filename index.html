@@ -1276,7 +1276,7 @@
             mainAppWorkspace.classList.remove('hidden');
             settingsTrigger.style.display = 'inline-flex';
             return loadDashboardData(user)
-                .then(() => loadStateFromSupabase(user))
+                .then(() => window.loadStateFromSupabase(user))
                 .catch(error => {
                     console.error('Signed-in data load error:', error);
                 });
@@ -1443,6 +1443,7 @@
                     persistStateToSupabase();
                 }
             }
+            window.loadStateFromSupabase = loadStateFromSupabase;
 
             async function persistStateToSupabase() {
                 if (!ensureSupabaseReady()) return;
